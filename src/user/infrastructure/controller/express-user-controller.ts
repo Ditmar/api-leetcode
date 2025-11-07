@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 
 export class ExpressUserController {
   async getAllUsers(req: Request, res: Response): Promise<void> {
+    console.log('test');
     const users = await services.user.getAll.execute();
     res.status(200).json(users);
   }
