@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  db:
+    container_name: leetcode-db
+    image: postgres:13
+    environment:
+      POSTGRES_USER: your_username
+      POSTGRES_PASSWORD: your_password
+      POSTGRES_DB: leetcode_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+volumes:
+  db-data:

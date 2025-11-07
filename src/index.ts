@@ -1,13 +1,16 @@
 import express, { Application, Request, Response } from 'express';
+import { userRoutes } from './user/infrastructure/routes/user-routes';
+
+import dotenv from 'dotenv';
+if (process.env.ENV === 'dev') {
+  dotenv.config();
+}
 
 const app: Application = express();
-const PORT = process.env.PORT || 3001;
-
-// Middleware to parse JSON
+const PORT = process.env.PORT ?? 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Basic test route
 app.get('/', (req: Request, res: Response) => {
   res.json({
     message: 'API is working correctly! 🚀',
@@ -15,15 +18,14 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
-// Health check route
 app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'OK',
     uptime: process.uptime(),
   });
 });
+app.use('/api/user', userRoutes);
 
-// Middleware to handle not found routes
 app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
     error: 'Route not found',

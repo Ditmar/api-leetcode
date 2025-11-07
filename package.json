@@ -11,7 +11,9 @@
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
     "format": "prettier --write src/**/*.ts",
     "prepare": "husky",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:up": "docker compose -f ./local-database/database.yaml up -d",
+    "prisma:migrate": "npx prisma migrate dev --name init"
   },
   "keywords": [
     "express",
@@ -38,10 +40,13 @@
     "lint-staged": "^16.2.6",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
+    "prisma": "^6.19.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "dotenv": "^17.2.3",
     "express": "^4.21.2"
   }
 }
