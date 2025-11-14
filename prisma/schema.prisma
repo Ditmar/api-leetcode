@@ -198,4 +198,36 @@ model Submission {
   @@index([userId])
   @@index([submittedAt])
   @@map("submissions")
+  name      String?
+  createdAt DateTime @default(now())
+  
+  // Relación con inscripciones
+  enrollments Enrollment[]
+}
+
+
+model Course {
+  id              Int          @id @default(autoincrement())
+  title           String
+  description     String
+  numberOfLessons Int
+  instructor      String?
+  duration        String?
+  level           String?
+  createdAt       DateTime     @default(now())
+  
+  // Relación con inscripciones
+  enrollments     Enrollment[]
+}
+model Enrollment {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  courseId   Int
+  enrolledAt DateTime @default(now())
+  
+  // Relaciones
+  user       User     @relation(fields: [userId], references: [id])
+  course     Course   @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
 }
