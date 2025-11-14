@@ -41,8 +41,6 @@ import { CourseGetByUser } from '../../course/application/course-get-by-user/cou
 import { CourseMockRepository } from '../../course/infrastructure/repository/course-mock-repository';
 import { EnrollmentMockRepository } from '../../course/infrastructure/repository/enrollment-mock-repository';
 
-const userRepository = new UserMockRepository();
-const authRepository = new AuthPrismaRepository(prisma);
 const courseRepository = new CourseMockRepository();
 const enrollmentRepository = new EnrollmentMockRepository();
 
@@ -62,20 +60,18 @@ export const services = {
     login: new AuthLogin(authRepository, refreshTokenRepository),
     getMe: new AuthGetMe(authRepository),
   },
-<<<<<<< HEAD
   tests: {
     getAll: new GetTestsUseCase(testRepository),
     getById: new GetTestByIdUseCase(testRepository),
     start: new StartTestUseCase(testRepository),
     getQuestions: new GetQuestionsUseCase(testRepository),
     submit: new SubmitTestUseCase(testRepository),
-=======
+  },
   course: {
     getAll: new CourseGetAll(courseRepository),
     getById: new CourseGetById(courseRepository),
     create: new CourseCreate(courseRepository),
     enroll: new CourseEnroll(courseRepository, enrollmentRepository),
     getByUser: new CourseGetByUser(enrollmentRepository, courseRepository),
->>>>>>> 202d5c0 (Feat: Implementation of the Course and Registration System)
   },
 };

@@ -8,6 +8,7 @@ import { AuthMiddleware } from './auth/infrastructure/middleware/auth-middleware
 import { authRoutes } from './auth/infrastructure/routes/auth-routes';
 import { userRoutes } from './user/infrastructure/routes/user-routes';
 import { testRoutes } from './tests/infraestructure/routes/test-routes';
+import { courseRoutes } from './course/infrastructure/routes/course-routes';
 
 const app: Application = express();
 
@@ -35,6 +36,16 @@ app.use('/health', (req: Request, res: Response) => {
   });
 });
 
+app.use('/api/user', userRoutes);
+app.use('/api/courses', courseRoutes);
+
+app.get('/api/users/me/courses', (req: Request, res: Response) => {
+  const courseController = require('./course/infrastructure/controller/express-course-controller');
+  const controller = new courseController.ExpressCourseController();
+  controller.getMyCourses(req, res);
+});
+
+// Authentication routes (public)
 app.use('/api/auth', authRoutes);
 app.use('/api/user', AuthMiddleware.validateToken, userRoutes);
 app.use('/api/tests', testRoutes);
