@@ -1,5 +1,6 @@
 import express, { Application, Request, Response } from 'express';
 import { userRoutes } from './user/infrastructure/routes/user-routes';
+import { courseRoutes } from './course/infrastructure/routes/course-routes';
 
 import dotenv from 'dotenv';
 if (process.env.ENV === 'dev') {
@@ -24,7 +25,15 @@ app.get('/health', (req: Request, res: Response) => {
     uptime: process.uptime(),
   });
 });
+
 app.use('/api/user', userRoutes);
+app.use('/api/courses', courseRoutes);
+
+app.get('/api/users/me/courses', (req: Request, res: Response) => {
+  const courseController = require('./course/infrastructure/controller/express-course-controller');
+  const controller = new courseController.ExpressCourseController();
+  controller.getMyCourses(req, res);
+});
 
 app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
