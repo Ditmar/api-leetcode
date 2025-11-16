@@ -15,6 +15,11 @@ app.get('/', (req: Request, res: Response) => {
   res.json({
     message: 'API is working correctly! 🚀',
     timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/health',
+      users: '/api/user',
+      tests: '/api/tests',
+    },
   });
 });
 
