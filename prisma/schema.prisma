@@ -5,8 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -18,4 +17,121 @@ model User {
   email     String   @unique
   name      String?
   createdAt DateTime @default(now())
+}
+// ============================================
+// MÓDULO TESTS
+// ============================================
+
+enum QuestionType {
+  MCQ
+  PROGRAMMING
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  logo      String?
+  tests     Test[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("companies")
+}
+
+model Test {
+  id          String          @id @default(uuid())
+  name        String
+  description String
+  company     Company         @relation(fields: [companyId], references: [id])
+  companyId   String
+  difficulty  DifficultyLevel
+  duration    Int
+  isActive    Boolean         @default(true)
+  questions   Question[]
+  sessions    TestSession[]
+  submissions Submission[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([companyId])
+  @@index([difficulty])
+  @@index([isActive])
+  @@map("tests")
+}
+
+model Question {
+  id              String          @id @default(uuid())
+  test            Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
+  testId          String
+  type            QuestionType
+  text            String
+  difficulty      DifficultyLevel
+  points          Int
+  timeLimit       Int?
+  options         Json?
+  programmingData Json?
+  order           Int
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([testId])
+  @@index([type])
+  @@map("questions")
+}
+
+model TestSession {
+  id         String      @id @default(uuid())
+  test       Test        @relation(fields: [testId], references: [id], onDelete: Cascade)
+  testId     String
+  userId     String
+  startedAt  DateTime    @default(now())
+  expiresAt  DateTime
+  isActive   Boolean     @default(true)
+  answers    Answer[]
+  submission Submission?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([testId, userId])
+  @@index([expiresAt])
+  @@index([isActive])
+  @@map("test_sessions")
+}
+
+model Answer {
+  id             String      @id @default(uuid())
+  session        TestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId      String
+  questionId     String
+  selectedOption String?
+  code           String?
+  language       String?
+  answeredAt     DateTime    @default(now())
+
+  @@index([sessionId])
+  @@index([questionId])
+  @@map("answers")
+}
+
+model Submission {
+  id          String      @id @default(uuid())
+  test        Test        @relation(fields: [testId], references: [id], onDelete: Cascade)
+  testId      String
+  session     TestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId   String      @unique
+  userId      String
+  score       Float
+  maxScore    Float
+  breakdown   Json
+  submittedAt DateTime    @default(now())
+
+  @@index([testId, userId])
+  @@index([submittedAt])
+  @@map("submissions")
 }
