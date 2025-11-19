@@ -3,9 +3,8 @@ import { UserDelete } from '../../user/application/user-delete.ts/user-delete';
 import { UserEdit } from '../../user/application/user-edit/user-edit';
 import { UserGetAll } from '../../user/application/user-get-all/user-get-all';
 import { UserGetById } from '../../user/application/user-get-by-id/user-get-by-id';
-import { UserMockRepository } from '../../user/infrastructure/repository/user-mock-repository';
-
-const userRepository = new UserMockRepository();
+import { UserRepositoryPostgres } from '../../user/infrastructure/repository/user-mock-postgres';
+const userRepository = new UserRepositoryPostgres();
 
 export const services = {
   user: {
