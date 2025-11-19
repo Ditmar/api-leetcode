@@ -1,8 +1,12 @@
 import express, { Application, Request, Response } from 'express';
 import { userRoutes } from './user/infrastructure/routes/user-routes';
-
 import dotenv from 'dotenv';
-if (process.env.ENV === 'dev') {
+import logger from '@logger';
+if (
+  process.env.ENV === 'dev' ||
+  process.env.ENV === 'qa' ||
+  process.env.ENV === 'ppd'
+) {
   dotenv.config();
 }
 
@@ -35,7 +39,7 @@ app.use('*', (req: Request, res: Response) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  logger.info(`Server is running on port ${PORT}`);
 });
 
 export default app;
