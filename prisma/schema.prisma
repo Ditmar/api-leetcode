@@ -19,3 +19,9 @@ model User {
   name      String?
   createdAt DateTime @default(now())
 }
+model Auth {
+  id        Int      @id @default(autoincrement())
+  nickname  String   @unique
+  password  String
+  email     String   @unique
+}

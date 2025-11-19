@@ -1,5 +1,6 @@
 import express, { Application, Request, Response } from 'express';
 import { userRoutes } from './user/infrastructure/routes/user-routes';
+import { authRoutes } from './auth/infrastructure/routes/auth-routes';
 
 import dotenv from 'dotenv';
 import { logger } from '@logger';
@@ -26,7 +27,9 @@ app.get('/health', (req: Request, res: Response) => {
     uptime: process.uptime(),
   });
 });
+
 app.use('/api/user', userRoutes);
+app.use('/api/auth', authRoutes);
 
 app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
