@@ -1,14 +1,11 @@
 import express, { Application, Request, Response } from 'express';
 import { userRoutes } from './user/infrastructure/routes/user-routes';
+import { authRoutes } from 'auth/infrastructure/routes/auth-routes';
 import dotenv from 'dotenv';
 import logger from '@logger';
-if (
-  process.env.ENV === 'dev' ||
-  process.env.ENV === 'qa' ||
-  process.env.ENV === 'ppd'
-) {
-  dotenv.config();
-}
+
+dotenv.config();
+console.log('Starting application... ', process.env.ENV);
 
 const app: Application = express();
 const PORT = process.env.PORT ?? 3000;
@@ -29,6 +26,7 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 app.use('/api/user', userRoutes);
+app.use('/api/auth', authRoutes);
 
 app.use('*', (req: Request, res: Response) => {
   res.status(404).json({

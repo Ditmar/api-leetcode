@@ -2,7 +2,7 @@
   "compilerOptions": {
     "baseUrl": "./src",
     "paths": {
-      "@prisma": ["./generated/client"],
+      "@db": ["./generated/prisma/client"],
       "@logger": ["./logger/index"],
     },
     "target": "ES2020",
