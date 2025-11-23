@@ -2,7 +2,7 @@ export interface Submission {
   id: string;
   testId: string;
   sessionId: string;
-  userId: string;
+  userId: number;
   score: number;
   maxScore: number;
   breakdown: Record<string, unknown>[];

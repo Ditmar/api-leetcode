@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client'; // ✅ Importar Prisma
 import {
   TestRepository,
   GetTestsParams,
@@ -109,7 +109,7 @@ export class TestPrismaRepository implements TestRepository {
 
   async createSession(
     testId: string,
-    userId: string,
+    userId: number,
     expiresAt: Date
   ): Promise<TestSession> {
     return this.prisma.testSession.create({
@@ -153,26 +153,35 @@ export class TestPrismaRepository implements TestRepository {
   async createSubmission(
     data: Omit<Submission, 'id' | 'submittedAt'>
   ): Promise<Submission> {
-    const created = await this.prisma.submission.create({
-      data: {
-        testId: data.testId,
-        sessionId: data.sessionId,
-        userId: data.userId,
-        score: data.score,
-        maxScore: data.maxScore,
-        breakdown: JSON.parse(JSON.stringify(data.breakdown)),
-      },
-    });
+    try {
+      const created = await this.prisma.submission.create({
+        data: {
+          testId: data.testId,
+          sessionId: data.sessionId,
+          userId: data.userId,
+          score: data.score,
+          maxScore: data.maxScore,
+          breakdown: JSON.parse(JSON.stringify(data.breakdown)),
+        },
+      });
 
-    return {
-      id: created.id,
-      testId: created.testId,
-      sessionId: created.sessionId,
-      userId: created.userId,
-      score: created.score,
-      maxScore: created.maxScore,
-      breakdown: created.breakdown as unknown as Record<string, unknown>[],
-      submittedAt: created.submittedAt,
-    };
+      return {
+        id: created.id,
+        testId: created.testId,
+        sessionId: created.sessionId,
+        userId: created.userId,
+        score: created.score,
+        maxScore: created.maxScore,
+        breakdown: created.breakdown as unknown as Record<string, unknown>[],
+        submittedAt: created.submittedAt,
+      };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new Error('Submission already exists for this session');
+        }
+      }
+      throw error;
+    }
   }
 }

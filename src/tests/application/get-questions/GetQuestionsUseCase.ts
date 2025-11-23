@@ -15,11 +15,15 @@ interface QuestionData {
 export class GetQuestionsUseCase {
   constructor(private testRepo: TestRepository) {}
 
-  async execute(testId: string, sessionId: string) {
+  async execute(testId: string, sessionId: string, userId: number) {
     const session = await this.testRepo.getSessionById(sessionId);
 
     if (!session) {
       throw new Error('Invalid session');
+    }
+
+    if (session.userId !== userId) {
+      throw new Error('Unauthorized: Session does not belong to user');
     }
 
     if (!session.isActive) {

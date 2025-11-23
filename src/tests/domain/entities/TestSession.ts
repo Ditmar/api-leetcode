@@ -1,7 +1,7 @@
 export interface TestSession {
   id: string;
   testId: string;
-  userId: string;
+  userId: number;
   startedAt: Date;
   expiresAt: Date;
   isActive: boolean;

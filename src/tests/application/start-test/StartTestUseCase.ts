@@ -3,7 +3,7 @@ import { TestRepository } from '../../domain/repositories/TestRepository';
 export class StartTestUseCase {
   constructor(private testRepo: TestRepository) {}
 
-  async execute(testId: string, userId: string) {
+  async execute(testId: string, userId: number) {
     const test = await this.testRepo.getById(testId);
 
     if (!test) {

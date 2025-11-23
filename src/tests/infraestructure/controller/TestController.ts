@@ -1,7 +1,14 @@
 import { Request, Response } from 'express';
 import { services } from '../../../share/infrastructure/services';
+import { AuthRequest } from '../../../share/infrastructure/middleware/auth.middleware';
 
 export class TestController {
+  private isValidUUID(uuid: string): boolean {
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  }
+
   async getTests(req: Request, res: Response): Promise<void> {
     try {
       const {
@@ -12,6 +19,25 @@ export class TestController {
         difficulty,
         orderBy,
       } = req.query;
+
+      if (companyId && !this.isValidUUID(companyId as string)) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid companyId format',
+        });
+        return;
+      }
+
+      if (
+        difficulty &&
+        !['EASY', 'MEDIUM', 'HARD'].includes(difficulty as string)
+      ) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid difficulty. Must be EASY, MEDIUM, or HARD',
+        });
+        return;
+      }
 
       const result = await services.tests.getAll.execute({
         page: Number(page),
@@ -48,6 +74,14 @@ export class TestController {
         return;
       }
 
+      if (!this.isValidUUID(id)) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid test ID format',
+        });
+        return;
+      }
+
       const result = await services.tests.getById.execute(id);
       res.status(200).json({
         success: true,
@@ -64,10 +98,10 @@ export class TestController {
     }
   }
 
-  async startTest(req: Request, res: Response): Promise<void> {
+  async startTest(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { userId } = req.body;
+      const userId = req.user!.id;
 
       if (!id) {
         res.status(400).json({
@@ -77,10 +111,10 @@ export class TestController {
         return;
       }
 
-      if (!userId) {
+      if (!this.isValidUUID(id)) {
         res.status(400).json({
           success: false,
-          error: 'userId is required',
+          error: 'Invalid test ID format',
         });
         return;
       }
@@ -105,15 +139,24 @@ export class TestController {
     }
   }
 
-  async getQuestions(req: Request, res: Response): Promise<void> {
+  async getQuestions(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const { sessionId } = req.query;
+      const userId = req.user!.id;
 
       if (!id) {
         res.status(400).json({
           success: false,
           error: 'Test ID is required',
+        });
+        return;
+      }
+
+      if (!this.isValidUUID(id)) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid test ID format',
         });
         return;
       }
@@ -126,7 +169,19 @@ export class TestController {
         return;
       }
 
-      const result = await services.tests.getQuestions.execute(id, sessionId);
+      if (!this.isValidUUID(sessionId)) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid sessionId format',
+        });
+        return;
+      }
+
+      const result = await services.tests.getQuestions.execute(
+        id,
+        sessionId,
+        userId
+      );
       res.status(200).json({
         success: true,
         data: result,
@@ -134,7 +189,13 @@ export class TestController {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      const status = errorMessage.includes('session') ? 400 : 500;
+      const status =
+        errorMessage.includes('Unauthorized') ||
+        errorMessage.includes('expired')
+          ? 403
+          : errorMessage.includes('session')
+            ? 400
+            : 500;
       res.status(status).json({
         success: false,
         error: errorMessage,
@@ -142,15 +203,24 @@ export class TestController {
     }
   }
 
-  async submitTest(req: Request, res: Response): Promise<void> {
+  async submitTest(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const { sessionId, answers } = req.body;
+      const userId = req.user!.id;
 
       if (!id) {
         res.status(400).json({
           success: false,
           error: 'Test ID is required',
+        });
+        return;
+      }
+
+      if (!this.isValidUUID(id)) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid test ID format',
         });
         return;
       }
@@ -163,6 +233,14 @@ export class TestController {
         return;
       }
 
+      if (!this.isValidUUID(sessionId)) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid sessionId format',
+        });
+        return;
+      }
+
       if (!answers || !Array.isArray(answers)) {
         res.status(400).json({
           success: false,
@@ -171,11 +249,73 @@ export class TestController {
         return;
       }
 
+      if (answers.length === 0) {
+        res.status(400).json({
+          success: false,
+          error: 'At least one answer is required',
+        });
+        return;
+      }
+
+      if (answers.length > 100) {
+        res.status(400).json({
+          success: false,
+          error: 'Maximum 100 answers allowed (DoS protection)',
+        });
+        return;
+      }
+
+      for (let i = 0; i < answers.length; i++) {
+        const answer = answers[i];
+
+        if (!answer.questionId) {
+          res.status(400).json({
+            success: false,
+            error: `Answer at index ${i}: questionId is required`,
+          });
+          return;
+        }
+
+        if (!this.isValidUUID(answer.questionId)) {
+          res.status(400).json({
+            success: false,
+            error: `Answer at index ${i}: invalid questionId format`,
+          });
+          return;
+        }
+
+        if (answer.selectedOption && answer.selectedOption.length > 500) {
+          res.status(400).json({
+            success: false,
+            error: `Answer at index ${i}: selectedOption too long (max 500 chars)`,
+          });
+          return;
+        }
+
+        if (answer.code && answer.code.length > 50000) {
+          res.status(400).json({
+            success: false,
+            error: `Answer at index ${i}: code too long (max 50KB)`,
+          });
+          return;
+        }
+
+        if (answer.language && answer.language.length > 50) {
+          res.status(400).json({
+            success: false,
+            error: `Answer at index ${i}: language name too long (max 50 chars)`,
+          });
+          return;
+        }
+      }
+
       const result = await services.tests.submit.execute(
         id,
         sessionId,
-        answers
+        answers,
+        userId
       );
+
       res.status(201).json({
         success: true,
         data: result,
@@ -183,7 +323,19 @@ export class TestController {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      const status = errorMessage.includes('session') ? 400 : 500;
+
+      let status = 500;
+      if (errorMessage.includes('Submission already exists')) {
+        status = 409;
+      } else if (
+        errorMessage.includes('Unauthorized') ||
+        errorMessage.includes('expired')
+      ) {
+        status = 403;
+      } else if (errorMessage.includes('session')) {
+        status = 400;
+      }
+
       res.status(status).json({
         success: false,
         error: errorMessage,

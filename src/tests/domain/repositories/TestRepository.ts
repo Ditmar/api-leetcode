@@ -63,7 +63,7 @@ export interface TestRepository {
   } | null>;
   createSession(
     testId: string,
-    userId: string,
+    userId: number,
     expiresAt: Date
   ): Promise<TestSession>;
   getQuestionsByTestId(testId: string): Promise<Question[]>;

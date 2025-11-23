@@ -30,15 +30,29 @@ interface BreakdownItem {
 export class SubmitTestUseCase {
   constructor(private testRepo: TestRepository) {}
 
-  async execute(testId: string, sessionId: string, answers: AnswerInput[]) {
+  async execute(
+    testId: string,
+    sessionId: string,
+    answers: AnswerInput[],
+    userId: number
+  ) {
     const session = await this.testRepo.getSessionById(sessionId);
 
     if (!session) {
       throw new Error('Invalid session');
     }
 
+    if (session.userId !== userId) {
+      throw new Error('Unauthorized: Session does not belong to user');
+    }
+
     if (!session.isActive) {
       throw new Error('Session is not active');
+    }
+
+    const now = new Date();
+    if (now > session.expiresAt) {
+      throw new Error('Session has expired');
     }
 
     if (session.testId !== testId) {
@@ -100,7 +114,7 @@ export class SubmitTestUseCase {
     const submission = await this.testRepo.createSubmission({
       testId,
       sessionId,
-      userId: session.userId,
+      userId,
       score: totalScore,
       maxScore,
       breakdown: breakdown as unknown as Record<string, unknown>[],

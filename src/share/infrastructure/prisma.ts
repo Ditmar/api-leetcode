@@ -17,3 +17,15 @@ export const closePrismaClient = async (): Promise<void> => {
     prismaInstance = null;
   }
 };
+
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, closing Prisma connection...');
+  await closePrismaClient();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, closing Prisma connection...');
+  await closePrismaClient();
+  process.exit(0);
+});
