@@ -4,7 +4,7 @@ import { authRoutes } from './auth/infrastructure/routes/auth-routes';
 import { AuthMiddleware } from './auth/infrastructure/middleware/auth-middleware';
 import dotenv from 'dotenv';
 import logger from '@logger';
-import { config } from './share/infrastructure/config'; // ✅ Import config for validation
+import { config } from './share/infrastructure/config'; //  Import config for validation
 
 
 const app: Application = express();

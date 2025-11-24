@@ -10,7 +10,7 @@ import { AuthSignup } from '../../application/auth-signup/auth-signup';
 import { AuthLogin } from '../../application/auth-login/auth-login';
 import { AuthGetMe } from '../../application/auth-get-me/auth-get-me';
 
-// ✅ FIX: Use dependency injection instead of global singleton
+//  FIX: Use dependency injection instead of global singleton
 export class ExpressAuthController {
   constructor(
     private signupUseCase: AuthSignup,
@@ -47,7 +47,7 @@ export class ExpressAuthController {
         return;
       }
 
-      // ✅ FIX: Only map ValidationError to 400
+      //  FIX: Only map ValidationError to 400
       if (error instanceof ValidationError) {
         res.status(400).json({
           error: 'Validation error',
@@ -56,7 +56,7 @@ export class ExpressAuthController {
         return;
       }
 
-      // ✅ FIX: Map domain validation errors (from VOs) to 400
+      //  FIX: Map domain validation errors (from VOs) to 400
       if (
         error instanceof Error &&
         (error.message.includes('cannot be empty') ||
@@ -70,7 +70,7 @@ export class ExpressAuthController {
         return;
       }
 
-      // ✅ FIX: All other errors are 500
+      //  FIX: All other errors are 500
       logger.error({ message: 'Unexpected error in signup', error });
       res.status(500).json({
         error: 'Internal server error',
@@ -105,7 +105,7 @@ export class ExpressAuthController {
         return;
       }
 
-      // ✅ FIX: Only validation errors to 400
+      //  FIX: Only validation errors to 400
       if (
         error instanceof ValidationError ||
         (error instanceof Error &&
@@ -118,7 +118,7 @@ export class ExpressAuthController {
         return;
       }
 
-      // ✅ FIX: Everything else is 500
+      //  FIX: Everything else is 500
       logger.error({ message: 'Unexpected error in login', error });
       res.status(500).json({
         error: 'Internal server error',

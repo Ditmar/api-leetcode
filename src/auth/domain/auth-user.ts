@@ -8,14 +8,14 @@ export class AuthUser {
   id: AuthUserId;
   name: AuthUserName;
   email: AuthUserEmail;
-  password: AuthUserHashedPassword; // ✅ FIX: Use hashed password VO
+  password: AuthUserHashedPassword; //  FIX: Use hashed password VO
   createdAt: AuthUserCreateAt;
 
   constructor(
     id: string,
     name: string,
     email: string,
-    hashedPassword: string, // ✅ FIX: Make it explicit this is hashed
+    hashedPassword: string, //  FIX: Make it explicit this is hashed
     createdAt?: Date
   ) {
     this.id = new AuthUserId(id);

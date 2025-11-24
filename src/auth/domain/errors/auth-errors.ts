@@ -26,7 +26,7 @@ export class InvalidTokenError extends Error {
   }
 }
 
-// ✅ NEW: Export ValidationError
+//  NEW: Export ValidationError
 export class ValidationError extends Error {
   constructor(message: string) {
     super(message);

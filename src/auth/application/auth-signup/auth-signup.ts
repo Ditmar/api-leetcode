@@ -27,7 +27,7 @@ export class AuthSignup {
       throw new UserAlreadyExistsError(email);
     }
 
-    // ✅ FIX: Use configured salt rounds
+    //  FIX: Use configured salt rounds
     const hashedPassword = await bcrypt.hash(
       passwordVO.getValue(),
       config.bcryptSaltRounds

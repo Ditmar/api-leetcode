@@ -34,7 +34,7 @@ export class AuthLogin {
       throw new InvalidCredentialsError();
     }
 
-    // ✅ FIX: Use validated config and explicit algorithm
+    //  FIX: Use validated config and explicit algorithm
     const options: SignOptions = {
       expiresIn: config.jwtExpiresIn as any,
       algorithm: 'HS256',

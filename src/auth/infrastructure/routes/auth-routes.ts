@@ -7,7 +7,7 @@ import { AuthGetMe } from '../../application/auth-get-me/auth-get-me';
 import { AuthPrismaRepository } from '../repository/auth-prisma-repository';
 import { prisma } from '../../../share/infrastructure/prisma-client';
 
-// ✅ FIX: Create dependencies and inject them
+//  FIX: Create dependencies and inject them
 const authRepository = new AuthPrismaRepository(prisma);
 const signupUseCase = new AuthSignup(authRepository);
 const loginUseCase = new AuthLogin(authRepository);

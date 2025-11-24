@@ -33,7 +33,7 @@ export class AuthMiddleware {
 
       const token = authHeader.substring(7);
 
-      // ✅ FIX: Use config validated at startup + explicit algorithm
+      //  FIX: Use config validated at startup + explicit algorithm
       const decoded = jwt.verify(token, config.jwtSecret, {
         algorithms: ['HS256'],
       }) as JWTPayload;
@@ -42,7 +42,7 @@ export class AuthMiddleware {
 
       next();
     } catch (error) {
-      // ✅ FIX: Check TokenExpiredError BEFORE JsonWebTokenError
+      //  FIX: Check TokenExpiredError BEFORE JsonWebTokenError
       if (error instanceof jwt.TokenExpiredError) {
         logger.warn('Token expired for request');
         res.status(401).json({
