@@ -1,16 +1,27 @@
 import { Request, Response } from 'express';
-import { services } from '../../../share/infrastructure/services';
 import {
   UserAlreadyExistsError,
   InvalidCredentialsError,
   UserNotFoundError,
+  ValidationError,
 } from '../../domain/errors/auth-errors';
 import logger from '@logger';
+import { AuthSignup } from '../../application/auth-signup/auth-signup';
+import { AuthLogin } from '../../application/auth-login/auth-login';
+import { AuthGetMe } from '../../application/auth-get-me/auth-get-me';
 
+// ✅ FIX: Use dependency injection instead of global singleton
 export class ExpressAuthController {
+  constructor(
+    private signupUseCase: AuthSignup,
+    private loginUseCase: AuthLogin,
+    private getMeUseCase: AuthGetMe
+  ) {}
+
   async signup(req: Request, res: Response): Promise<void> {
     try {
       const { name, email, password } = req.body;
+
       if (!name || !email || !password) {
         res.status(400).json({
           error: 'Missing required fields',
@@ -19,7 +30,7 @@ export class ExpressAuthController {
         return;
       }
 
-      const user = await services.auth.signup.execute(name, email, password);
+      const user = await this.signupUseCase.execute(name, email, password);
 
       logger.info(`User registered successfully: ${user.email.getValue()}`);
 
@@ -36,7 +47,8 @@ export class ExpressAuthController {
         return;
       }
 
-      if (error instanceof Error) {
+      // ✅ FIX: Only map ValidationError to 400
+      if (error instanceof ValidationError) {
         res.status(400).json({
           error: 'Validation error',
           message: error.message,
@@ -44,7 +56,22 @@ export class ExpressAuthController {
         return;
       }
 
-      logger.error('Error in signup: %s', (error as Error).message ?? 'Unknown error');
+      // ✅ FIX: Map domain validation errors (from VOs) to 400
+      if (
+        error instanceof Error &&
+        (error.message.includes('cannot be empty') ||
+          error.message.includes('must be at least') ||
+          error.message.includes('Invalid email format'))
+      ) {
+        res.status(400).json({
+          error: 'Validation error',
+          message: error.message,
+        });
+        return;
+      }
+
+      // ✅ FIX: All other errors are 500
+      logger.error({ message: 'Unexpected error in signup', error });
       res.status(500).json({
         error: 'Internal server error',
         message: 'Error creating user',
@@ -64,7 +91,7 @@ export class ExpressAuthController {
         return;
       }
 
-      const result = await services.auth.login.execute(email, password);
+      const result = await this.loginUseCase.execute(email, password);
 
       logger.info(`User logged in successfully: ${email}`);
 
@@ -78,7 +105,12 @@ export class ExpressAuthController {
         return;
       }
 
-      if (error instanceof Error) {
+      // ✅ FIX: Only validation errors to 400
+      if (
+        error instanceof ValidationError ||
+        (error instanceof Error &&
+          error.message.includes('Invalid email format'))
+      ) {
         res.status(400).json({
           error: 'Validation error',
           message: error.message,
@@ -86,7 +118,8 @@ export class ExpressAuthController {
         return;
       }
 
-      logger.error('Error in login: %s', (error as Error).message ?? 'Unknown error');
+      // ✅ FIX: Everything else is 500
+      logger.error({ message: 'Unexpected error in login', error });
       res.status(500).json({
         error: 'Internal server error',
         message: 'Error logging in',
@@ -106,7 +139,7 @@ export class ExpressAuthController {
         return;
       }
 
-      const user = await services.auth.getMe.execute(userId);
+      const user = await this.getMeUseCase.execute(userId);
 
       res.status(200).json(user);
     } catch (error) {
@@ -118,7 +151,7 @@ export class ExpressAuthController {
         return;
       }
 
-      logger.error('Error in getMe: %s', (error as Error).message ?? 'Unknown error');
+      logger.error({ message: 'Unexpected error in getMe', error });
       res.status(500).json({
         error: 'Internal server error',
         message: 'Error getting user information',

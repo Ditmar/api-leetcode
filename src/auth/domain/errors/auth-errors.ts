@@ -25,3 +25,11 @@ export class InvalidTokenError extends Error {
     this.name = 'InvalidTokenError';
   }
 }
+
+// ✅ NEW: Export ValidationError
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}

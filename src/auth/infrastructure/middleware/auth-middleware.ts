@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import logger from '@logger';
+import { config } from '../../../share/infrastructure/config';
 
 declare global {
   namespace Express {
@@ -29,28 +31,20 @@ export class AuthMiddleware {
         return;
       }
 
-      const token = authHeader.substring(7); 
+      const token = authHeader.substring(7);
 
-      const secret = process.env.JWT_SECRET;
-      if (!secret) {
-        throw new Error('JWT_SECRET is not defined in environment variables');
-      }
-
-      const decoded = jwt.verify(token, secret) as JWTPayload;
+      // ✅ FIX: Use config validated at startup + explicit algorithm
+      const decoded = jwt.verify(token, config.jwtSecret, {
+        algorithms: ['HS256'],
+      }) as JWTPayload;
 
       req.userId = decoded.id;
 
       next();
     } catch (error) {
-      if (error instanceof jwt.JsonWebTokenError) {
-        res.status(401).json({
-          error: 'Invalid token',
-          message: error.message,
-        });
-        return;
-      }
-
+      // ✅ FIX: Check TokenExpiredError BEFORE JsonWebTokenError
       if (error instanceof jwt.TokenExpiredError) {
+        logger.warn('Token expired for request');
         res.status(401).json({
           error: 'Token expired',
           message: 'Your session has expired, please login again',
@@ -58,6 +52,18 @@ export class AuthMiddleware {
         return;
       }
 
+      if (error instanceof jwt.JsonWebTokenError) {
+        logger.warn(
+          `Invalid token for request - Path: ${req.path}, Error: ${error.message}`
+        );
+        res.status(401).json({
+          error: 'Invalid token',
+          message: error.message,
+        });
+        return;
+      }
+
+      logger.error('Unexpected error validating token', undefined, String(error));
       res.status(500).json({
         error: 'Internal server error',
         message: 'Error validating token',

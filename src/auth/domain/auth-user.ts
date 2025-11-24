@@ -1,32 +1,32 @@
 import { AuthUserId } from './auth-user-id';
 import { AuthUserEmail } from './auth-user-email';
 import { AuthUserName } from './auth-user-name';
-import { AuthUserPassword } from './auth-user-password';
+import { AuthUserHashedPassword } from './auth-user-hashed-password';
 import { AuthUserCreateAt } from './auth-user-create-at';
 
 export class AuthUser {
   id: AuthUserId;
   name: AuthUserName;
   email: AuthUserEmail;
-  password: AuthUserPassword;
+  password: AuthUserHashedPassword; // ✅ FIX: Use hashed password VO
   createdAt: AuthUserCreateAt;
 
   constructor(
     id: string,
     name: string,
     email: string,
-    password: string,
+    hashedPassword: string, // ✅ FIX: Make it explicit this is hashed
     createdAt?: Date
   ) {
     this.id = new AuthUserId(id);
     this.name = new AuthUserName(name);
     this.email = new AuthUserEmail(email);
-    this.password = new AuthUserPassword(password);
+    this.password = new AuthUserHashedPassword(hashedPassword);
     this.createdAt = new AuthUserCreateAt(createdAt ?? new Date());
   }
 
-  public setPassword(password: AuthUserPassword): void {
-    this.password = password;
+  public setHashedPassword(hashedPassword: AuthUserHashedPassword): void {
+    this.password = hashedPassword;
   }
 
   public toJSON(): object {

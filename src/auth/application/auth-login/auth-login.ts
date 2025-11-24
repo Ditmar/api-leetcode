@@ -3,6 +3,7 @@ import { AuthUserEmail } from '../../domain/auth-user-email';
 import { InvalidCredentialsError } from '../../domain/errors/auth-errors';
 import bcrypt from 'bcrypt';
 import jwt, { SignOptions } from 'jsonwebtoken';
+import { config } from '../../../share/infrastructure/config';
 
 export interface LoginResponse {
   token: string;
@@ -33,15 +34,10 @@ export class AuthLogin {
       throw new InvalidCredentialsError();
     }
 
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new Error('JWT_SECRET is not defined in environment variables');
-    }
-
-    const expiresIn = process.env.JWT_EXPIRES_IN ?? '7d';
-
+    // ✅ FIX: Use validated config and explicit algorithm
     const options: SignOptions = {
-      expiresIn: /^\d+$/.test(expiresIn) ? Number(expiresIn) : (expiresIn as unknown as any),
+      expiresIn: config.jwtExpiresIn as any,
+      algorithm: 'HS256',
     };
 
     const token = jwt.sign(
@@ -49,7 +45,7 @@ export class AuthLogin {
         id: user.id.getValue(),
         email: user.email.getValue(),
       },
-      secret,
+      config.jwtSecret,
       options
     );
 
