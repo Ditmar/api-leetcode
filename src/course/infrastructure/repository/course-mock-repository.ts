@@ -1,12 +1,33 @@
 import { CourseRepository } from '../../domain/repository/course-repository';
 import { Course } from '../../domain/course';
 import { CourseId } from '../../domain/course-id';
-import { CourseFilters } from 'course/domain/course-filters';
+import { CourseFilters } from '../../domain/course-filters';
+import { CourseTitle } from '../../domain/course-title';
+import { CourseDescription } from '../../domain/course-description';
+import { CourseNumberOfLessons } from '../../domain/course-number-of-lessons';
+import { UpdateCourseDTO } from '../../domain/dtos/update-course.dto';
+import { v4 as uuidv4 } from 'uuid';
 
 export class CourseMockRepository implements CourseRepository {
   private courses: Course[] = [];
 
   create(course: Course): Promise<Course> {
+    if (!course.id.getValue() || course.id.getValue() === '') {
+      const newId = uuidv4();
+      const persistedCourse = new Course(
+        newId,
+        course.title.getValue(),
+        course.description.getValue(),
+        course.numberOfLessons.getValue(),
+        course.instructor,
+        course.duration,
+        course.level,
+        course.createdAt
+      );
+      this.courses.push(persistedCourse);
+      return Promise.resolve(persistedCourse);
+    }
+
     this.courses.push(course);
     return Promise.resolve(course);
   }
@@ -26,6 +47,14 @@ export class CourseMockRepository implements CourseRepository {
     if (filters?.instructor) {
       filteredCourses = filteredCourses.filter(
         course => course.instructor === filters.instructor
+      );
+    }
+    if (filters?.title) {
+      filteredCourses = filteredCourses.filter(course =>
+        course.title
+          .getValue()
+          .toLowerCase()
+          .includes(filters.title!.toLowerCase())
       );
     }
 
@@ -48,6 +77,14 @@ export class CourseMockRepository implements CourseRepository {
     return Promise.resolve(course || null);
   }
 
+  async getByIds(ids: CourseId[]): Promise<Course[]> {
+    const idValues = ids.map(id => id.getValue());
+    const foundCourses = this.courses.filter(course =>
+      idValues.includes(course.id.getValue())
+    );
+    return Promise.resolve(foundCourses);
+  }
+
   delete(id: CourseId): Promise<void> {
     this.courses = this.courses.filter(
       course => course.id.getValue() !== id.getValue()
@@ -55,7 +92,7 @@ export class CourseMockRepository implements CourseRepository {
     return Promise.resolve();
   }
 
-  edit(id: CourseId, courseData: Partial<Course>): Promise<Course> {
+  edit(id: CourseId, data: UpdateCourseDTO): Promise<Course> {
     const course = this.courses.find(
       course => course.id.getValue() === id.getValue()
     );
@@ -64,24 +101,28 @@ export class CourseMockRepository implements CourseRepository {
       throw new Error('Course not found');
     }
 
-    if (courseData.title !== undefined) {
-      course.setTitle(courseData.title);
+    if (data.title !== undefined) {
+      course.setTitle(new CourseTitle(data.title));
     }
 
-    if (courseData.description !== undefined) {
-      course.setDescription(courseData.description);
+    if (data.description !== undefined) {
+      course.setDescription(new CourseDescription(data.description));
     }
 
-    if (courseData.instructor !== undefined) {
-      course.instructor = courseData.instructor;
+    if (data.numberOfLessons !== undefined) {
+      course.numberOfLessons = new CourseNumberOfLessons(data.numberOfLessons);
     }
 
-    if (courseData.duration !== undefined) {
-      course.duration = courseData.duration;
+    if (data.instructor !== undefined) {
+      course.instructor = data.instructor;
     }
 
-    if (courseData.level !== undefined) {
-      course.level = courseData.level;
+    if (data.duration !== undefined) {
+      course.duration = data.duration;
+    }
+
+    if (data.level !== undefined) {
+      course.level = data.level;
     }
 
     return Promise.resolve(course);

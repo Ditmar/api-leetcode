@@ -14,6 +14,7 @@ export class CourseEnroll {
 
   async execute(userId: string, courseId: string): Promise<Enrollment> {
     const course = await this.courseRepository.getById(new CourseId(courseId));
+
     if (!course) {
       throw new CourseNotFoundError(`Course with id ${courseId} not found`);
     }
@@ -28,8 +29,7 @@ export class CourseEnroll {
       throw new AlreadyEnrolledError('User is already enrolled in this course');
     }
 
-    const enrollmentId = `${userId}-${courseId}-${Date.now()}`;
-    const enrollment = new Enrollment(enrollmentId, userId, courseId);
+    const enrollment = Enrollment.create(userId, courseId);
 
     return this.enrollmentRepository.create(enrollment);
   }

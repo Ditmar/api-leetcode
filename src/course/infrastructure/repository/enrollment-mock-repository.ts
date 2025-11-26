@@ -3,13 +3,23 @@ import { Enrollment } from '../../domain/enrollment';
 import { EnrollmentId } from '../../domain/enrollment-id';
 import { UserId } from '../../../user/domain/user-id';
 import { CourseId } from '../../domain/course-id';
+import { v4 as uuidv4 } from 'uuid';
 
 export class EnrollmentMockRepository implements EnrollmentRepository {
   private enrollments: Enrollment[] = [];
 
   create(enrollment: Enrollment): Promise<Enrollment> {
-    this.enrollments.push(enrollment);
-    return Promise.resolve(enrollment);
+    // Generar UUID para el enrollment si no tiene ID
+    const id = uuidv4();
+    const persistedEnrollment = Enrollment.fromPersistence(
+      id,
+      enrollment.userId.getValue(),
+      enrollment.courseId.getValue(),
+      enrollment.enrolledAt
+    );
+
+    this.enrollments.push(persistedEnrollment);
+    return Promise.resolve(persistedEnrollment);
   }
 
   findByUserAndCourse(
