@@ -207,7 +207,7 @@ model Submission {
 
 
 model Course {
-  id              Int          @id @default(autoincrement())
+  id              String       @id @default(uuid())
   title           String
   description     String
   numberOfLessons Int
@@ -220,9 +220,9 @@ model Course {
   enrollments     Enrollment[]
 }
 model Enrollment {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  courseId   Int
+  id         String      @id @default(uuid())
+  userId     String
+  courseId   String
   enrolledAt DateTime @default(now())
   
   // Relaciones

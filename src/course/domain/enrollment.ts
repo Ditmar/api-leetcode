@@ -8,12 +8,31 @@ export class Enrollment {
   courseId: CourseId;
   enrolledAt: Date;
 
-  constructor(id: string, userId: string, courseId: string, enrolledAt?: Date) {
+  private constructor(
+    id: string,
+    userId: string,
+    courseId: string,
+    enrolledAt?: Date
+  ) {
     this.id = new EnrollmentId(id);
     this.userId = new UserId(userId);
     this.courseId = new CourseId(courseId);
     this.enrolledAt = enrolledAt || new Date();
   }
+
+  static create(userId: string, courseId: string): Enrollment {
+    return new Enrollment('', userId, courseId);
+  }
+
+  static fromPersistence(
+    id: string,
+    userId: string,
+    courseId: string,
+    enrolledAt: Date
+  ): Enrollment {
+    return new Enrollment(id, userId, courseId, enrolledAt);
+  }
+
   public toJSON() {
     return {
       id: this.id.getValue(),
@@ -31,6 +50,7 @@ export class Enrollment {
       Enrolled At: ${this.enrolledAt.toISOString()}]`
     );
   }
+
   public getEnrollmentInfo(): string {
     return `User ID: ${this.userId.getValue()}, 
     Course ID: ${this.courseId.getValue()}`;

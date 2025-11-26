@@ -1,6 +1,6 @@
 import { CourseRepository } from '../../domain/repository/course-repository';
 import { Course } from '../../domain/course';
-import { CourseFilters } from 'course/domain/course-filters';
+import { CourseFilters } from '../../domain/course-filters';
 
 export class CourseGetAll {
   constructor(private repository: CourseRepository) {}

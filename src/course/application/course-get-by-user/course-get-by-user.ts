@@ -2,6 +2,7 @@ import { EnrollmentRepository } from '../../domain/repository/enrollment-reposit
 import { CourseRepository } from '../../domain/repository/course-repository';
 import { UserId } from '../../../user/domain/user-id';
 import { Course } from '../../domain/course';
+import { CourseNotFoundError } from '../../domain/errors/course-not-found-error';
 
 interface CourseWithEnrollment {
   course: Course;
@@ -19,22 +20,34 @@ export class CourseGetByUser {
       new UserId(userId)
     );
 
-    const coursesWithEnrollment = await Promise.all(
-      enrollments.map(async enrollment => {
-        const course = await this.courseRepository.getById(enrollment.courseId);
+    if (enrollments.length === 0) {
+      return [];
+    }
 
-        if (!course) {
-          throw new Error(
-            `Course with id ${enrollment.courseId.getValue()} not found`
-          );
-        }
+    // Solución al problema N+1: obtener todos los cursos de una vez
+    const courseIds = enrollments.map(enrollment => enrollment.courseId);
+    const courses = await this.courseRepository.getByIds(courseIds);
 
-        return {
-          course: course,
-          enrolledAt: enrollment.enrolledAt,
-        };
-      })
+    // Crear un mapa para búsqueda eficiente
+    const courseMap = new Map(
+      courses.map(course => [course.id.getValue(), course])
     );
+
+    // Mapear enrollments con sus cursos correspondientes
+    const coursesWithEnrollment = enrollments.map(enrollment => {
+      const course = courseMap.get(enrollment.courseId.getValue());
+
+      if (!course) {
+        throw new CourseNotFoundError(
+          `Course with id ${enrollment.courseId.getValue()} not found`
+        );
+      }
+
+      return {
+        course: course,
+        enrolledAt: enrollment.enrolledAt,
+      };
+    });
 
     return coursesWithEnrollment;
   }

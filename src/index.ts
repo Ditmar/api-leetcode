@@ -9,6 +9,9 @@ import { authRoutes } from './auth/infrastructure/routes/auth-routes';
 import { userRoutes } from './user/infrastructure/routes/user-routes';
 import { testRoutes } from './tests/infraestructure/routes/test-routes';
 import { courseRoutes } from './course/infrastructure/routes/course-routes';
+import { ExpressCourseController } from 'course/infrastructure/controller/express-course-controller';
+import { authMiddleware } from 'share/infrastructure/middleware/auth.middleware';
+import { errorHandler } from 'share/infrastructure/middleware/error-handler.middleware';
 
 const app: Application = express();
 
@@ -39,10 +42,10 @@ app.use('/health', (req: Request, res: Response) => {
 app.use('/api/user', userRoutes);
 app.use('/api/courses', courseRoutes);
 
-app.get('/api/users/me/courses', (req: Request, res: Response) => {
-  const courseController = require('./course/infrastructure/controller/express-course-controller');
-  const controller = new courseController.ExpressCourseController();
-  controller.getMyCourses(req, res);
+const courseController = new ExpressCourseController();
+
+app.get('/api/courses/me', authMiddleware, (req, res, next) => {
+  courseController.getMyCourses(req, res, next);
 });
 
 // Authentication routes (public)
@@ -51,6 +54,7 @@ app.use('/api/user', AuthMiddleware.validateToken, userRoutes);
 app.use('/api/tests', testRoutes);
 
 app.use('*', (req: Request, res: Response) => {
+  logger.warn({ path: req.originalUrl }, 'Route not found');
   res.status(404).json({
     error: 'Route not found',
     path: req.originalUrl,

@@ -3,15 +3,17 @@ export class CourseId {
 
   constructor(value: string) {
     this.value = value;
-    this.ensureIsValidId();
+    if (value.length > 0) {
+      this.ensureIsValidId();
+    }
   }
 
   private ensureIsValidId() {
-    if (this.value.length === 0) {
-      throw new Error('CourseId cannot be empty');
-    }
-    if (this.value.length > 36) {
-      throw new Error('CourseId cannot be longer than 36 characters');
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (!uuidRegex.test(this.value)) {
+      throw new Error('CourseId must be a valid UUID');
     }
   }
 
