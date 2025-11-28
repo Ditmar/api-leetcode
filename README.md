@@ -137,3 +137,15 @@ This project uses Husky to automatically run:
 ## 📄 License
 
 This project is under the ISC License.
+
+## How it works the configuration
+
+api-leetcode
+| config
+  | default.json  # Default Base configuration
+  | custom-environment-variables.json
+  | test.json # Test environment
+
+The configuration files are managed using the `config` package. Each file corresponds to a specific environment:
+## how decide the environment
+the library config automatically detects the environment based on the `NODE_ENV` environment variable. If `NODE_ENV` is not set, it defaults to `default.json`.

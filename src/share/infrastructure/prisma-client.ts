@@ -1,9 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import { config } from '@config';
 import logger from '@logger';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient({
   log:
-    process.env.NODE_ENV === 'dev'
+    config.app.nodeEnv === 'dev'
       ? ['query', 'info', 'warn', 'error']
       : ['error'],
 });
@@ -18,7 +19,7 @@ prisma
     process.exit(1);
   });
 
-  process.on('beforeExit', async () => {
+process.on('beforeExit', async () => {
   await prisma.$disconnect();
   logger.info('🔌 Disconnected from database');
 });

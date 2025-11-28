@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { config } from '@config';
 import logger from '@logger';
-import { config } from '../../../share/infrastructure/config';
+import { NextFunction, Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 
 declare global {
   namespace Express {
@@ -34,7 +34,7 @@ export class AuthMiddleware {
       const token = authHeader.substring(7);
 
       //  FIX: Use config validated at startup + explicit algorithm
-      const decoded = jwt.verify(token, config.jwtSecret, {
+      const decoded = jwt.verify(token, config.JWT.secret, {
         algorithms: ['HS256'],
       }) as JWTPayload;
 
@@ -63,7 +63,11 @@ export class AuthMiddleware {
         return;
       }
 
-      logger.error('Unexpected error validating token', undefined, String(error));
+      logger.error(
+        'Unexpected error validating token',
+        undefined,
+        String(error)
+      );
       res.status(500).json({
         error: 'Internal server error',
         message: 'Error validating token',

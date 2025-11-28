@@ -1,9 +1,10 @@
+import { config } from '@config';
 import pino from 'pino';
 
 const logger = pino({
-  level: process.env.LOG_LEVEL ?? 'info',
+  level: config.app.logLevel ?? 'info',
   transport:
-    process.env.NODE_ENV === 'prod'
+    config.app.nodeEnv === 'prod'
       ? undefined
       : {
           target: 'pino-pretty',

@@ -1,0 +1,15 @@
+{
+  "app": {
+    "port": 3000,
+    "nodeEnv": "development",
+    "logLevel": "info"
+  },
+  "database": {
+    "url": "postgres://your_username:your_password@localhost:5432/leetcode_db"
+  },
+  "JWT": {
+    "secret": "your_jwt_secret_key",
+    "expiresIn": 30000,
+    "saltRounds": 10
+  }
+}
