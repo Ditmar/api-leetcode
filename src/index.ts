@@ -1,11 +1,9 @@
-import express, { Application, Request, Response } from 'express';
-import { userRoutes } from './user/infrastructure/routes/user-routes';
-import { authRoutes } from './auth/infrastructure/routes/auth-routes';
-import { AuthMiddleware } from './auth/infrastructure/middleware/auth-middleware';
-import dotenv from 'dotenv';
+import { config } from '@config';
 import logger from '@logger';
-import { config } from './share/infrastructure/config'; //  Import config for validation
-
+import express, { Application, Request, Response } from 'express';
+import { AuthMiddleware } from './auth/infrastructure/middleware/auth-middleware';
+import { authRoutes } from './auth/infrastructure/routes/auth-routes';
+import { userRoutes } from './user/infrastructure/routes/user-routes';
 
 const app: Application = express();
 
@@ -41,9 +39,9 @@ app.use('*', (req: Request, res: Response) => {
   });
 });
 
-app.listen(config.port, () => {
-  logger.info(`Server is running on port ${config.port}`);
-  logger.info(`Environment: ${config.nodeEnv}`);
+app.listen(config.app.port, () => {
+  logger.info(`Server is running on port ${config.app.port}`);
+  logger.info(`Environment: ${config.app.nodeEnv}`);
 });
 
 export default app;

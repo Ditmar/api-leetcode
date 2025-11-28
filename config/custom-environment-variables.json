@@ -1,0 +1,15 @@
+{
+  "app": {
+    "port": "PORT",
+    "nodeEnv": "ENV",
+    "logLevel": "LOG_LEVEL"
+  },
+  "database": {
+    "url": "DATABASE_URL"
+  },
+  "JWT": {
+    "secret": "JWT_SECRET",
+    "expiresIn": "JWT_EXPIRES_IN",
+    "saltRounds": "JWT_SALT_ROUNDS"
+  }
+}

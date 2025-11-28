@@ -1,11 +1,11 @@
-import { AuthRepository } from '../../domain/repository/auth-repository';
+import { config } from '@config';
+import bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
 import { AuthUser } from '../../domain/auth-user';
 import { AuthUserEmail } from '../../domain/auth-user-email';
 import { AuthUserPassword } from '../../domain/auth-user-password';
 import { UserAlreadyExistsError } from '../../domain/errors/auth-errors';
-import bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
-import { config } from '../../../share/infrastructure/config';
+import { AuthRepository } from '../../domain/repository/auth-repository';
 
 export class AuthSignup {
   constructor(private repository: AuthRepository) {}
@@ -30,7 +30,7 @@ export class AuthSignup {
     //  FIX: Use configured salt rounds
     const hashedPassword = await bcrypt.hash(
       passwordVO.getValue(),
-      config.bcryptSaltRounds
+      config.JWT.saltRounds
     );
 
     // Create user with hashed password

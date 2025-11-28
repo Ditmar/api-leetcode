@@ -1,9 +1,9 @@
-import { AuthRepository } from '../../domain/repository/auth-repository';
-import { AuthUserEmail } from '../../domain/auth-user-email';
-import { InvalidCredentialsError } from '../../domain/errors/auth-errors';
+import { config } from '@config';
 import bcrypt from 'bcrypt';
 import jwt, { SignOptions } from 'jsonwebtoken';
-import { config } from '../../../share/infrastructure/config';
+import { AuthUserEmail } from '../../domain/auth-user-email';
+import { InvalidCredentialsError } from '../../domain/errors/auth-errors';
+import { AuthRepository } from '../../domain/repository/auth-repository';
 
 export interface LoginResponse {
   token: string;
@@ -36,7 +36,7 @@ export class AuthLogin {
 
     //  FIX: Use validated config and explicit algorithm
     const options: SignOptions = {
-      expiresIn: config.jwtExpiresIn as any,
+      expiresIn: config.JWT.expiresIn as any,
       algorithm: 'HS256',
     };
 
@@ -45,7 +45,7 @@ export class AuthLogin {
         id: user.id.getValue(),
         email: user.email.getValue(),
       },
-      config.jwtSecret,
+      config.JWT.secret,
       options
     );
 
