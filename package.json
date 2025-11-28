@@ -29,9 +29,12 @@
     ]
   },
   "devDependencies": {
+    "@types/bcrypt": "6.0.0",
     "@types/express": "5.0.5",
+    "@types/jsonwebtoken": "9.0.10",
     "@types/node": "24.10.0",
     "@types/pino": "7.0.5",
+    "@types/uuid": "10.0.0",
     "@typescript-eslint/eslint-plugin": "8.46.3",
     "@typescript-eslint/parser": "8.46.3",
     "eslint": "8.57.1",
@@ -48,9 +51,12 @@
   },
   "dependencies": {
     "@prisma/client": "6.19.0",
+    "bcrypt": "6.0.0",
     "dotenv": "17.2.3",
     "express": "4.21.2",
+    "jsonwebtoken": "9.0.2",
     "pino": "10.1.0",
-    "pino-pretty": "13.1.2"
+    "pino-pretty": "13.1.2",
+    "uuid": "13.0.0"
   }
 }

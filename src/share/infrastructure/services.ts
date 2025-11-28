@@ -5,7 +5,14 @@ import { UserGetAll } from '../../user/application/user-get-all/user-get-all';
 import { UserGetById } from '../../user/application/user-get-by-id/user-get-by-id';
 import { UserMockRepository } from '../../user/infrastructure/repository/user-mock-repository';
 
+import { AuthSignup } from '../../auth/application/auth-signup/auth-signup';
+import { AuthLogin } from '../../auth/application/auth-login/auth-login';
+import { AuthGetMe } from '../../auth/application/auth-get-me/auth-get-me';
+import { AuthPrismaRepository } from '../../auth/infrastructure/repository/auth-prisma-repository';
+import { prisma } from './prisma-client';
+
 const userRepository = new UserMockRepository();
+const authRepository = new AuthPrismaRepository(prisma);
 
 export const services = {
   user: {
@@ -14,5 +21,10 @@ export const services = {
     create: new UserCreate(userRepository),
     update: new UserEdit(userRepository),
     delete: new UserDelete(userRepository),
+  },
+  auth: {
+    signup: new AuthSignup(authRepository),
+    login: new AuthLogin(authRepository),
+    getMe: new AuthGetMe(authRepository),
   },
 };
