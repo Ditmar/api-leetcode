@@ -5,10 +5,14 @@ export interface Question {
   text: string;
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   points: number;
-  timeLimit?: number | null;
-  options?: Record<string, unknown> | null;
-  programmingData?: Record<string, unknown> | null;
+  timeLimit: number | null;
   order: number;
+
+  options?: Record<string, unknown> | null;
+  correctAnswer?: string[] | null;
+
+  programmingData?: Record<string, unknown> | null;
+
   createdAt: Date;
   updatedAt: Date;
 }

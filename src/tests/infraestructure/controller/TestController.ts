@@ -101,7 +101,7 @@ export class TestController {
   async startTest(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const userId = req.user!.id;
+      const userId = String(req.user!.id);
 
       if (!id) {
         res.status(400).json({
@@ -143,7 +143,7 @@ export class TestController {
     try {
       const { id } = req.params;
       const { sessionId } = req.query;
-      const userId = req.user!.id;
+      const userId = String(req.user!.id);
 
       if (!id) {
         res.status(400).json({
@@ -180,7 +180,7 @@ export class TestController {
       const result = await services.tests.getQuestions.execute(
         id,
         sessionId,
-        userId
+        userId as unknown as string
       );
       res.status(200).json({
         success: true,
@@ -207,7 +207,7 @@ export class TestController {
     try {
       const { id } = req.params;
       const { sessionId, answers } = req.body;
-      const userId = req.user!.id;
+      const userId = String(req.user!.id);
 
       if (!id) {
         res.status(400).json({
@@ -313,7 +313,7 @@ export class TestController {
         id,
         sessionId,
         answers,
-        userId
+        userId as unknown as string
       );
 
       res.status(201).json({

@@ -7,26 +7,6 @@ interface AnswerInput {
   language?: string;
 }
 
-interface QuestionData {
-  id: string;
-  type: string;
-  difficulty: string;
-  points: number;
-  options?: Record<string, unknown> | null;
-}
-
-interface BreakdownItem {
-  questionId: string;
-  type: string;
-  difficulty: string;
-  correct: boolean;
-  points: number;
-  maxPoints: number;
-  selectedOption?: string;
-  code?: string;
-  language?: string;
-}
-
 export class SubmitTestUseCase {
   constructor(private testRepo: TestRepository) {}
 
@@ -34,82 +14,97 @@ export class SubmitTestUseCase {
     testId: string,
     sessionId: string,
     answers: AnswerInput[],
-    userId: number
+    userId: string
   ) {
     const session = await this.testRepo.getSessionById(sessionId);
 
     if (!session) {
-      throw new Error('Invalid session');
+      throw new Error('Session not found');
     }
 
-    if (session.userId !== userId) {
-      throw new Error('Unauthorized: Session does not belong to user');
+    if (String(session.userId) !== String(userId)) {
+      throw new Error('Unauthorized: Session does not belong to this user');
+    }
+
+    if (new Date() > session.expiresAt) {
+      throw new Error('Session has expired');
     }
 
     if (!session.isActive) {
       throw new Error('Session is not active');
     }
 
-    const now = new Date();
-    if (now > session.expiresAt) {
-      throw new Error('Session has expired');
-    }
-
     if (session.testId !== testId) {
-      throw new Error('Session does not match test');
+      throw new Error('Session does not belong to this test');
     }
 
     const questions = await this.testRepo.getQuestionsByTestId(testId);
 
+    if (questions.length === 0) {
+      throw new Error('Test has no questions');
+    }
+
     let totalScore = 0;
-    const maxScore = questions.reduce(
-      (sum: number, q: QuestionData) => sum + q.points,
-      0
-    );
+    let maxScore = 0;
+    let correct = 0;
+    let incorrect = 0;
 
-    const breakdown: BreakdownItem[] = answers.map((answer: AnswerInput) => {
-      const question = questions.find(
-        (q: QuestionData) => q.id === answer.questionId
-      );
+    const breakdown: Array<{
+      questionId: string;
+      correct: boolean;
+      points: number;
+      maxPoints: number;
+    }> = [];
 
-      if (!question) {
-        return {
-          questionId: answer.questionId,
+    for (const question of questions) {
+      maxScore += question.points;
+
+      const answer = answers.find(a => a.questionId === question.id);
+
+      if (!answer) {
+        breakdown.push({
+          questionId: question.id,
           correct: false,
           points: 0,
-          maxPoints: 0,
-          type: 'UNKNOWN',
-          difficulty: 'EASY',
-        };
+          maxPoints: question.points,
+        });
+        incorrect++;
+        continue;
       }
 
-      let correct = false;
-      let pointsEarned = 0;
+      let isCorrect = false;
 
-      if (question.type === 'MCQ' && question.options) {
-        const options = question.options as { correct?: string };
-        const correctAnswer = options.correct;
-        correct = answer.selectedOption === correctAnswer;
-        pointsEarned = correct ? question.points : 0;
-        totalScore += pointsEarned;
+      if (question.type === 'MCQ' && question.correctAnswer) {
+        const correctAnswers = question.correctAnswer as string[];
+        isCorrect = correctAnswers.includes(answer.selectedOption || '');
+      } else if (question.type === 'PROGRAMMING') {
+        isCorrect = false;
       }
 
-      if (question.type === 'PROGRAMMING') {
-        correct = false;
-        pointsEarned = 0;
+      const pointsEarned = isCorrect ? question.points : 0;
+      totalScore += pointsEarned;
+
+      if (isCorrect) {
+        correct++;
+      } else {
+        incorrect++;
       }
 
-      return {
+      breakdown.push({
         questionId: question.id,
-        type: question.type,
-        difficulty: question.difficulty,
-        correct,
+        correct: isCorrect,
         points: pointsEarned,
         maxPoints: question.points,
-        ...(answer.selectedOption && { selectedOption: answer.selectedOption }),
-        ...(answer.code && { code: answer.code, language: answer.language }),
-      };
-    });
+      });
+
+      await this.testRepo.saveAnswer({
+        sessionId,
+        questionId: question.id,
+        selectedOption: answer.selectedOption,
+        code: answer.code,
+        language: answer.language,
+      });
+    }
 
     const submission = await this.testRepo.createSubmission({
       testId,
@@ -117,21 +112,27 @@ export class SubmitTestUseCase {
       userId,
       score: totalScore,
       maxScore,
-      breakdown: breakdown as unknown as Record<string, unknown>[],
+      breakdown: [
+        {
+          correct,
+          incorrect,
+          total: questions.length,
+          details: breakdown,
+        },
+      ],
     });
-
-    const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
 
     return {
       submissionId: submission.id,
-      testId,
-      sessionId,
       score: totalScore,
       maxScore,
-      percentage: Math.round(percentage * 100) / 100,
-      totalQuestions: questions.length,
-      correctAnswers: breakdown.filter((b: BreakdownItem) => b.correct).length,
-      breakdown,
+      percentage: (totalScore / maxScore) * 100,
+      passed: totalScore / maxScore >= 0.7,
+      breakdown: {
+        correct,
+        incorrect,
+        total: questions.length,
+      },
       submittedAt: submission.submittedAt,
     };
   }

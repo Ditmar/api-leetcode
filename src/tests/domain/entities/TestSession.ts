@@ -1,10 +1,10 @@
 export interface TestSession {
   id: string;
   testId: string;
-  userId: number;
+  userId: string;
   startedAt: Date;
   expiresAt: Date;
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

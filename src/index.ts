@@ -4,6 +4,7 @@ import express, { Application, Request, Response } from 'express';
 import { AuthMiddleware } from './auth/infrastructure/middleware/auth-middleware';
 import { authRoutes } from './auth/infrastructure/routes/auth-routes';
 import { userRoutes } from './user/infrastructure/routes/user-routes';
+import { testRoutes } from './tests/infraestructure/routes/test-routes';
 
 const app: Application = express();
 
@@ -17,6 +18,7 @@ app.get('/', (req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
     endpoints: {
       health: '/health',
+      auth: '/api/auth',
       users: '/api/user',
       tests: '/api/tests',
     },
@@ -30,13 +32,10 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// Authentication routes (public)
 app.use('/api/auth', authRoutes);
-
-// User routes (protected)
 app.use('/api/user', AuthMiddleware.validateToken, userRoutes);
+app.use('/api/tests', testRoutes);
 
-// 404 handler
 app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
     error: 'Route not found',

@@ -3,7 +3,7 @@ import { TestRepository } from '../../domain/repositories/TestRepository';
 export class StartTestUseCase {
   constructor(private testRepo: TestRepository) {}
 
-  async execute(testId: string, userId: number) {
+  async execute(testId: string, userId: string) {
     const test = await this.testRepo.getById(testId);
 
     if (!test) {
@@ -22,6 +22,8 @@ export class StartTestUseCase {
       expiresAt
     );
 
+    const questions = test.questions || [];
+
     return {
       sessionId: session.id,
       testId: test.id,
@@ -30,7 +32,7 @@ export class StartTestUseCase {
       startedAt: session.startedAt,
       expiresAt: session.expiresAt,
       remainingTime: test.duration * 60,
-      totalQuestions: test.questions.length,
+      totalQuestions: questions.length,
     };
   }
 }

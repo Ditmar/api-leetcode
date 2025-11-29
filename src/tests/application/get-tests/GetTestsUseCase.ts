@@ -3,28 +3,6 @@ import {
   GetTestsParams,
 } from '../../domain/repositories/TestRepository';
 
-interface QuestionSummary {
-  id: string;
-  type: string;
-  difficulty: string;
-}
-
-interface TestData {
-  id: string;
-  name: string;
-  description: string;
-  company: {
-    id: string;
-    name: string;
-    logo: string | null;
-  };
-  questions: QuestionSummary[];
-  difficulty: string;
-  duration: number;
-  isActive: boolean;
-  createdAt: Date;
-}
-
 export class GetTestsUseCase {
   constructor(private testRepo: TestRepository) {}
 
@@ -35,27 +13,24 @@ export class GetTestsUseCase {
 
     const result = await this.testRepo.getAll(params);
 
-    const formattedData = result.data.map((test: TestData) => ({
-      id: test.id,
-      name: test.name,
-      description: test.description,
-      company: {
-        id: test.company.id,
-        name: test.company.name,
-        logo: test.company.logo,
-      },
-      difficulty: test.difficulty,
-      duration: test.duration,
-      totalQuestions: test.questions.length,
-      questionsByType: {
-        mcq: test.questions.filter((q: QuestionSummary) => q.type === 'MCQ')
-          .length,
-        programming: test.questions.filter(
-          (q: QuestionSummary) => q.type === 'PROGRAMMING'
-        ).length,
-      },
-      createdAt: test.createdAt,
-    }));
+    const formattedData = result.data.map(test => {
+      const questions = test.questions || []; // ✅ Manejar undefined
+
+      return {
+        id: test.id,
+        name: test.name,
+        description: test.description,
+        company: test.company || { id: '', name: 'Unknown', logo: null }, // ✅ Default
+        difficulty: test.difficulty,
+        duration: test.duration,
+        totalQuestions: questions.length,
+        questionsByType: {
+          mcq: questions.filter(q => q.type === 'MCQ').length,
+          programming: questions.filter(q => q.type === 'PROGRAMMING').length,
+        },
+        createdAt: test.createdAt,
+      };
+    });
 
     return {
       data: formattedData,

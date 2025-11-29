@@ -1,5 +1,6 @@
-import { Question } from '../entities/Question';
+import { Test } from '../entities/Test';
 import { TestSession } from '../entities/TestSession';
+import { Question } from '../entities/Question';
 import { Submission } from '../entities/Submission';
 
 export interface GetTestsParams {
@@ -12,63 +13,58 @@ export interface GetTestsParams {
 }
 
 export interface GetTestsResult {
-  data: Array<{
-    id: string;
-    name: string;
-    description: string;
-    company: {
-      id: string;
-      name: string;
-      logo: string | null;
-    };
-    questions: Array<{
-      id: string;
-      type: string;
-      difficulty: string;
-    }>;
-    difficulty: string;
-    duration: number;
-    isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  }>;
+  data: Test[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
 }
 
+export interface Answer {
+  id: string;
+  sessionId: string;
+  questionId: string;
+  selectedOption?: string;
+  code?: string;
+  language?: string;
+  isCorrect?: boolean;
+  points?: number;
+  answeredAt: Date;
+  question?: Question;
+}
+
+export interface SessionWithRelations extends TestSession {
+  test?: Test;
+  user?: {
+    id: string;
+    email: string;
+    name: string;
+  };
+}
+
 export interface TestRepository {
   getAll(params: GetTestsParams): Promise<GetTestsResult>;
-  getById(id: string): Promise<{
-    id: string;
-    name: string;
-    description: string;
-    company: {
-      id: string;
-      name: string;
-      logo: string | null;
-    };
-    questions: Array<{
-      id: string;
-      type: string;
-      difficulty: string;
-      points: number;
-    }>;
-    difficulty: string;
-    duration: number;
-    isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  } | null>;
+  getById(id: string): Promise<Test | null>;
+
   createSession(
     testId: string,
-    userId: number,
+    userId: string,
     expiresAt: Date
   ): Promise<TestSession>;
+
   getQuestionsByTestId(testId: string): Promise<Question[]>;
-  getSessionById(sessionId: string): Promise<TestSession | null>;
+  getSessionById(sessionId: string): Promise<SessionWithRelations | null>;
   createSubmission(
     data: Omit<Submission, 'id' | 'submittedAt'>
   ): Promise<Submission>;
+
+  saveAnswer(data: {
+    sessionId: string;
+    questionId: string;
+    selectedOption?: string;
+    code?: string;
+    language?: string;
+  }): Promise<Answer>;
+
+  getAnswersBySessionId(sessionId: string): Promise<Answer[]>;
 }

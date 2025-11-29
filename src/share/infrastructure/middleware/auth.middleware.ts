@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 
 export interface AuthRequest extends Request {
   user?: {
-    id: number;
+    id: string;
     email: string;
   };
 }
@@ -23,7 +23,7 @@ export const authMiddleware = (
   }
 
   req.user = {
-    id: parseInt(userId, 10),
+    id: userId,
     email: 'user@example.com',
   };
 
