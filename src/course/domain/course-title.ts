@@ -1,21 +1,13 @@
 export class CourseTitle {
-  private value: string;
-
-  constructor(value: string) {
-    this.value = value;
-    this.ensureIsValidTitle();
-  }
-
-  private ensureIsValidTitle() {
-    if (this.value.length < 3) {
-      throw new Error('Course title must be at least 3 characters long');
+  constructor(private readonly value: string) {
+    if (!value || value.trim() === '') {
+      throw new Error('Course title cannot be empty');
     }
-    if (this.value.length > 100) {
-      throw new Error('Course title cannot be longer than 100 characters');
+    if (value.length > 100) {
+      throw new Error('Course title cannot exceed 100 characters');
     }
   }
-
-  public getValue(): string {
+  getValue(): string {
     return this.value;
   }
 }

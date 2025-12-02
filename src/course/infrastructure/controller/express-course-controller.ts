@@ -1,181 +1,144 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
+import { CourseNotFoundError } from '../../domain/errors/course-not-found-error';
+import { AlreadyEnrolledError } from '../../domain/errors/already-enrolled-error';
+import logger from '@logger';
 import { services } from '../../../share/infrastructure/services';
-import { CourseFilters } from '../../domain/course-filters';
-import { logger } from '@logger';
 
 export class ExpressCourseController {
-  // GET /api/courses
-  async getAllCourses(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
+  private isValidUUID(uuid: string): boolean {
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  }
 
-      const filters: CourseFilters = {
-        level: req.query.level as string | undefined,
-        instructor: req.query.instructor as string | undefined,
-        title: req.query.title as string | undefined,
+  async getCourses(req: Request, res: Response): Promise<void> {
+    try {
+      const { page = 1, limit = 10, search, isActive, orderBy } = req.query;
+
+      // Validaciones
+      if (
+        isActive !== undefined &&
+        isActive !== 'true' &&
+        isActive !== 'false'
+      ) {
+        res.status(400).json({
+          success: false,
+          error: 'isActive must be "true" or "false"',
+        });
+        return;
+      }
+
+      const parsedParams = {
+        page: Number(page),
+        limit: Number(limit),
+        search: search as string | undefined,
+        isActive:
+          isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+        orderBy: orderBy as
+          | 'title'
+          | 'createdAt'
+          | 'numberOfLessons'
+          | undefined,
       };
 
-      logger.info({ page, limit, filters }, 'Fetching courses');
-
-      const result = await services.course.getAll.execute(page, limit, filters);
-
-      res.status(200).json({
-        data: result.courses.map(course => course.toJSON()),
-        pagination: {
-          page: result.page,
-          limit: result.limit,
-          total: result.total,
-          totalPages: Math.ceil(result.total / result.limit),
-        },
+      const result = await services.course.getAll.execute(parsedParams);
+      res.status(200).json({ success: true, ...result });
+    } catch (_error: unknown) {
+      logger.error({ error: _error }, 'Error in getCourses');
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
       });
-    } catch (err) {
-      logger.error(err, 'Error fetching courses');
-      next(err);
     }
   }
 
-  // GET /api/courses/:id
-  async getCourseById(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  async getCourseById(req: Request, res: Response): Promise<void> {
     try {
-      const courseId = req.params.id;
-      logger.info({ courseId }, 'Fetching course by ID');
-
-      const course = await services.course.getById.execute(courseId);
-
-      res.status(200).json(course.toJSON());
-    } catch (err) {
-      logger.error(err, 'Error fetching course by ID');
-      next(err);
-    }
-  }
-
-  // POST /api/courses
-  async createCourse(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const {
-        title,
-        description,
-        numberOfLessons,
-        instructor,
-        duration,
-        level,
-      } = req.body;
-
-      // Validación de campos requeridos
-      if (!title || !description || !numberOfLessons) {
-        res.status(400).json({
-          error: 'Validation error',
-          message:
-            'Missing required fields: title, description, numberOfLessons',
-        });
+      const { id } = req.params;
+      if (!id) {
+        res
+          .status(400)
+          .json({ success: false, error: 'Course ID is required' });
+        return;
+      }
+      if (!this.isValidUUID(id)) {
+        res
+          .status(400)
+          .json({ success: false, error: 'Invalid course ID format' });
         return;
       }
 
-      logger.info({ title }, 'Creating new course');
-
-      const newCourse = await services.course.create.execute(
-        '',
-        title,
-        description,
-        numberOfLessons,
-        instructor,
-        duration,
-        level
-      );
-
-      res.status(201).json(newCourse.toJSON());
-    } catch (err) {
-      logger.error(err, 'Error creating course');
-      next(err);
+      const course = await services.course.getById.execute(id);
+      res.status(200).json({ success: true, data: course });
+    } catch (error) {
+      if (error instanceof CourseNotFoundError) {
+        res.status(404).json({ success: false, error: error.message });
+        return;
+      }
+      logger.error('Error in getCourseById');
+      res.status(500).json({ success: false, error: 'Internal server error' });
     }
   }
 
-  // POST /api/courses/:id/enroll
-  async enrollInCourse(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  async enrollInCourse(req: Request, res: Response): Promise<void> {
     try {
-      // userId viene del middleware de autenticación
-      const userId = req.userId;
+      const { id } = req.params;
+      const userId = req.userId; // viene del AuthMiddleware
 
+      if (!id) {
+        res
+          .status(400)
+          .json({ success: false, error: 'Course ID is required' });
+        return;
+      }
+      if (!this.isValidUUID(id)) {
+        res
+          .status(400)
+          .json({ success: false, error: 'Invalid course ID format' });
+        return;
+      }
       if (!userId) {
-        res.status(401).json({
-          error: 'Authentication required',
-          message: 'User not authenticated',
-        });
+        res
+          .status(401)
+          .json({ success: false, error: 'Authentication required' });
         return;
       }
 
-      const courseId = req.params.id;
-
-      if (!courseId) {
-        res.status(400).json({
-          error: 'Validation error',
-          message: 'Course ID is required',
-        });
-        return;
-      }
-
-      logger.info({ userId, courseId }, 'Enrolling user in course');
-
-      const enrollment = await services.course.enroll.execute(userId, courseId);
-
+      const result = await services.course.enroll.execute(userId, id);
       res.status(201).json({
-        message: 'Enrollment successful',
-        enrollment: enrollment.toJSON(),
+        success: true,
+        message: 'Successfully enrolled in course',
+        data: { enrollmentId: result.enrollmentId },
       });
-    } catch (err) {
-      logger.error(err, 'Error enrolling in course');
-      next(err);
+    } catch (error) {
+      if (error instanceof AlreadyEnrolledError) {
+        res.status(409).json({ success: false, error: error.message });
+        return;
+      }
+      if (error instanceof CourseNotFoundError) {
+        res.status(404).json({ success: false, error: error.message });
+        return;
+      }
+      logger.error('Error in enrollInCourse');
+      res.status(500).json({ success: false, error: 'Internal server error' });
     }
   }
 
-  // GET /api/users/me/courses
-  async getMyCourses(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  async getEnrolledCourses(req: Request, res: Response): Promise<void> {
     try {
-      // userId viene del middleware de autenticación
       const userId = req.userId;
-
       if (!userId) {
-        res.status(401).json({
-          error: 'Authentication required',
-          message: 'User not authenticated',
-        });
+        res
+          .status(401)
+          .json({ success: false, error: 'Authentication required' });
         return;
       }
 
-      logger.info({ userId }, 'Fetching user courses');
-
-      const enrolledCourses = await services.course.getByUser.execute(userId);
-
-      res.status(200).json({
-        enrolledCourses: enrolledCourses.map(item => ({
-          ...item.course.toJSON(),
-          enrolledAt: item.enrolledAt,
-        })),
-      });
-    } catch (err) {
-      logger.error(err, 'Error fetching user courses');
-      next(err);
+      const courses = await services.course.getByUser.execute(userId);
+      res.status(200).json({ success: true, data: courses });
+    } catch (_error) {
+      logger.error({ error: _error }, 'Error in getEnrolledCourses');
+      res.status(500).json({ success: false, error: 'Internal server error' });
     }
   }
 }
