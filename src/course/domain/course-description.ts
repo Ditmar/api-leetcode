@@ -1,18 +1,13 @@
 export class CourseDescription {
-  private value: string;
-
-  constructor(value: string) {
-    this.value = value;
-    this.ensureIsValidDescription();
-  }
-
-  private ensureIsValidDescription() {
-    if (this.value.length < 10) {
-      throw new Error('Course description must be at least 10 characters long');
+  constructor(private readonly value: string) {
+    if (!value || value.trim() === '') {
+      throw new Error('Course description cannot be empty');
+    }
+    if (value.length > 1000) {
+      throw new Error('Course description cannot exceed 1000 characters');
     }
   }
-
-  public getValue(): string {
+  getValue(): string {
     return this.value;
   }
 }

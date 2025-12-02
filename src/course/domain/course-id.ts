@@ -1,23 +1,15 @@
 export class CourseId {
-  private value: string;
-
-  constructor(value: string) {
-    this.value = value;
-    if (value.length > 0) {
-      this.ensureIsValidId();
+  constructor(private readonly value: string) {
+    if (!value || value.trim() === '') {
+      throw new Error('Course ID cannot be empty');
     }
-  }
-
-  private ensureIsValidId() {
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-    if (!uuidRegex.test(this.value)) {
-      throw new Error('CourseId must be a valid UUID');
+    if (!uuidRegex.test(value)) {
+      throw new Error('Invalid Course ID format');
     }
   }
-
-  public getValue(): string {
+  getValue(): string {
     return this.value;
   }
 }

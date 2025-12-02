@@ -24,6 +24,7 @@ model User {
   testSessions TestSession[]
   submissions  Submission[]
   refreshTokens RefreshToken[]
+  enrollments  Enrollment[]
   
   @@map("users")
 }
@@ -198,36 +199,32 @@ model Submission {
   @@index([userId])
   @@index([submittedAt])
   @@map("submissions")
-  name      String?
-  createdAt DateTime @default(now())
-  
-  // Relación con inscripciones
-  enrollments Enrollment[]
 }
-
 
 model Course {
-  id              String       @id @default(uuid())
-  title           String
-  description     String
-  numberOfLessons Int
-  instructor      String?
-  duration        String?
-  level           String?
-  createdAt       DateTime     @default(now())
-  
-  // Relación con inscripciones
-  enrollments     Enrollment[]
-}
-model Enrollment {
-  id         String      @id @default(uuid())
-  userId     String
-  courseId   String
-  enrolledAt DateTime @default(now())
-  
+  id               String      @id @default(uuid())
+  title            String
+  description      String      @db.Text
+  numberOfLessons  Int
+  isActive         Boolean     @default(true) @map("is_active")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
   // Relaciones
-  user       User     @relation(fields: [userId], references: [id])
-  course     Course   @relation(fields: [courseId], references: [id])
+  enrollments      Enrollment[]
+  @@index([isActive])
+  @@map("courses")
+}
 
+model Enrollment {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  courseId  String   @map("course_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+  // Relaciones con Foreign Keys
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
   @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@map("enrollments")
 }

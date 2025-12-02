@@ -1,6 +1,6 @@
 export class CourseNotFoundError extends Error {
-  constructor(message: string) {
-    super(message);
+  constructor(id: string) {
+    super(`Course with ID ${id} not found`);
     this.name = 'CourseNotFoundError';
   }
 }

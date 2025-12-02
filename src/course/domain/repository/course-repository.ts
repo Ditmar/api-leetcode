@@ -1,20 +1,24 @@
 import { Course } from '../course';
-import { CourseFilters } from '../course-filters';
-import { CourseId } from '../course-id';
-import { UpdateCourseDTO } from '../dtos/update-course.dto';
+
+export interface GetCoursesParams {
+  page: number;
+  limit: number;
+  search?: string;
+  isActive?: boolean;
+  orderBy?: 'title' | 'createdAt' | 'numberOfLessons';
+}
+
+export interface GetCoursesResult {
+  data: Course[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 export interface CourseRepository {
+  getAll(params: GetCoursesParams): Promise<GetCoursesResult>;
+  getById(id: string): Promise<Course | null>;
+  getAllByIds(ids: string[]): Promise<Course[]>;
   create(course: Course): Promise<Course>;
-  getAll(
-    page?: number,
-    limit?: number,
-    filters?: CourseFilters
-  ): Promise<{
-    courses: Course[];
-    total: number;
-  }>;
-  getById(id: CourseId): Promise<Course | null>;
-  getByIds(ids: CourseId[]): Promise<Course[]>;
-  delete(id: CourseId): Promise<void>;
-  edit(id: CourseId, data: UpdateCourseDTO): Promise<Course>;
 }

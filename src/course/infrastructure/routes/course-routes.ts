@@ -1,29 +1,20 @@
 import { Router } from 'express';
 import { ExpressCourseController } from '../controller/express-course-controller';
-import { authMiddleware } from '../../../share/infrastructure/middleware/auth.middleware';
+import { AuthMiddleware } from '../../../auth/infrastructure/middleware/auth-middleware';
 
-const courseController = new ExpressCourseController();
+const router = Router();
+const controller = new ExpressCourseController();
 
-const courseRoutes = Router();
+// Rutas públicas
+router.get('/', (req, res) => controller.getCourses(req, res));
+router.get('/:id', (req, res) => controller.getCourseById(req, res));
 
-courseRoutes.get('/', (req, res, next) =>
-  courseController.getAllCourses(req, res, next)
+// Rutas protegidas
+router.post('/:id/enroll', AuthMiddleware.validateToken, (req, res) =>
+  controller.enrollInCourse(req, res)
+);
+router.get('/me/courses', AuthMiddleware.validateToken, (req, res) =>
+  controller.getEnrolledCourses(req, res)
 );
 
-courseRoutes.get('/me', authMiddleware, (req, res, next) =>
-  courseController.getMyCourses(req, res, next)
-);
-
-courseRoutes.get('/:id', (req, res, next) =>
-  courseController.getCourseById(req, res, next)
-);
-
-courseRoutes.post('/', (req, res, next) =>
-  courseController.createCourse(req, res, next)
-);
-
-courseRoutes.post('/:id/enroll', authMiddleware, (req, res, next) =>
-  courseController.enrollInCourse(req, res, next)
-);
-
-export { courseRoutes };
+export { router as courseRoutes };

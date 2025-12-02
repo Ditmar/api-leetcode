@@ -18,3 +18,4 @@ const logger = pino({
     services: 'api-leetcode',
   },
 });
+export default logger;
