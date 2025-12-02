@@ -3,8 +3,8 @@ export class AuthUserPassword {
     if (!value || value.trim() === '') {
       throw new Error('Password cannot be empty');
     }
-    if (value.length < 6) {
-      throw new Error('Password must be at least 6 characters long');
+    if (value.length < 8) {
+      throw new Error('Password must be at least 8 characters long'); //added requeriments from ticket 8 characters
     }
   }
 

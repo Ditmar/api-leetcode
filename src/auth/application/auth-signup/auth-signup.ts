@@ -2,6 +2,7 @@ import { config } from '@config';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { AuthUser } from '../../domain/auth-user';
+import { AuthUserName } from 'auth/domain/auth-user-name';
 import { AuthUserEmail } from '../../domain/auth-user-email';
 import { AuthUserPassword } from '../../domain/auth-user-password';
 import { UserAlreadyExistsError } from '../../domain/errors/auth-errors';
@@ -32,6 +33,13 @@ export class AuthSignup {
       passwordVO.getValue(),
       config.JWT.saltRounds
     );
+    //To valid username is unic
+    const existingUserByName = await this.repository.findByName(
+      new AuthUserName(name)
+    );
+    if (existingUserByName) {
+      throw new UserAlreadyExistsError(name);
+    }
 
     // Create user with hashed password
     const id = uuidv4();

@@ -3,6 +3,7 @@ import { AuthRepository } from '../../domain/repository/auth-repository';
 import { AuthUser } from '../../domain/auth-user';
 import { AuthUserEmail } from '../../domain/auth-user-email';
 import { AuthUserId } from '../../domain/auth-user-id';
+import { AuthUserName } from '../../domain/auth-user-name';
 
 export class AuthPrismaRepository implements AuthRepository {
   private prisma: PrismaClient;
@@ -33,14 +34,9 @@ export class AuthPrismaRepository implements AuthRepository {
 
   async findByEmail(email: AuthUserEmail): Promise<AuthUser | null> {
     const user = await this.prisma.user.findUnique({
-      where: {
-        email: email.getValue(),
-      },
+      where: { email: email.getValue() },
     });
-
-    if (!user) {
-      return null;
-    }
+    if (!user) return null;
 
     return new AuthUser(
       user.id,
@@ -53,14 +49,24 @@ export class AuthPrismaRepository implements AuthRepository {
 
   async findById(id: AuthUserId): Promise<AuthUser | null> {
     const user = await this.prisma.user.findUnique({
-      where: {
-        id: id.getValue(),
-      },
+      where: { id: id.getValue() },
     });
+    if (!user) return null;
 
-    if (!user) {
-      return null;
-    }
+    return new AuthUser(
+      user.id,
+      user.name,
+      user.email,
+      user.password,
+      user.createdAt
+    );
+  }
+
+  async findByName(name: AuthUserName): Promise<AuthUser | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { name: name.getValue() },
+    });
+    if (!user) return null;
 
     return new AuthUser(
       user.id,
