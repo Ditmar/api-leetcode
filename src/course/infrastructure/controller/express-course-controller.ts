@@ -15,7 +15,7 @@ export class ExpressCourseController {
     try {
       const { page = 1, limit = 10, search, isActive, orderBy } = req.query;
 
-      // Validaciones
+      // Validaciones...
       if (
         isActive !== undefined &&
         isActive !== 'true' &&
