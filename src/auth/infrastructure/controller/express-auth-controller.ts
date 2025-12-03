@@ -92,10 +92,10 @@ export class ExpressAuthController {
       }
 
       const result = await this.loginUseCase.execute(email, password);
-
-      logger.info(`User logged in successfully: ${email}`);
-
-      res.status(200).json(result);
+      res.status(200).json({
+        access_token: result.token,
+        token_type: 'Bearer',
+      });
     } catch (error) {
       if (error instanceof InvalidCredentialsError) {
         res.status(401).json({
