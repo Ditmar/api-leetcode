@@ -12,6 +12,7 @@ import { AuthGetMe } from '../../auth/application/auth-get-me/auth-get-me';
 import { AuthLogin } from '../../auth/application/auth-login/auth-login';
 import { AuthSignup } from '../../auth/application/auth-signup/auth-signup';
 import { AuthPrismaRepository } from '../../auth/infrastructure/repository/auth-prisma-repository';
+import { RefreshTokenPrismaRepository } from '../../auth/infrastructure/repository/refresh-token-prisma-repository';
 import { prisma } from './prisma-client';
 
 // ============================================
@@ -29,6 +30,7 @@ import { SubmitTestUseCase } from '../../tests/application/submit-test/SubmitTes
 // ============================================
 const userRepository = new UserMockRepository();
 const authRepository = new AuthPrismaRepository(prisma);
+const refreshTokenRepository = new RefreshTokenPrismaRepository(prisma);
 const testRepository = new TestPrismaRepository(prisma);
 
 // ============================================
@@ -44,7 +46,7 @@ export const services = {
   },
   auth: {
     signup: new AuthSignup(authRepository),
-    login: new AuthLogin(authRepository),
+    login: new AuthLogin(authRepository, refreshTokenRepository),
     getMe: new AuthGetMe(authRepository),
   },
   tests: {

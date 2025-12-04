@@ -14,17 +14,38 @@ datasource db {
 // MODELO EXISTENTE - User
 // ============================================
 model User {
-  id           String        @id @default(uuid())
-  email        String        @unique
+  id           String         @id @default(uuid())
+  email        String         @unique
   name         String
   password     String
-  createdAt    DateTime      @default(now()) @map("created_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
   
   // Relaciones
   testSessions TestSession[]
   submissions  Submission[]
+  refreshTokens RefreshToken[]
   
   @@map("users")
+}
+
+// ============================================
+// MODELO - RefreshToken
+// ============================================
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  isRevoked Boolean  @default(false) @map("is_revoked")
+  
+  // Relaciones
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
 }
 
 // ============================================
