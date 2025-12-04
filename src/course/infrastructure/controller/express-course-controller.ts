@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
-import { CourseNotFoundError } from '../../domain/errors/course-not-found-error';
-import { AlreadyEnrolledError } from '../../domain/errors/already-enrolled-error';
+import { AlreadyEnrolledError, CourseNotFoundError } from '../../domain/errors';
 import logger from '@logger';
 import { services } from '../../../share/infrastructure/services';
 
@@ -112,7 +111,10 @@ export class ExpressCourseController {
       });
     } catch (error) {
       if (error instanceof AlreadyEnrolledError) {
-        res.status(409).json({ success: false, error: error.message });
+        res.status(409).json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Already enrolled',
+        });
         return;
       }
       if (error instanceof CourseNotFoundError) {

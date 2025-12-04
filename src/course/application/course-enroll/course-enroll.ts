@@ -1,5 +1,5 @@
 import { EnrollmentRepository } from '../../domain/repository/enrollment-repository';
-import { AlreadyEnrolledError } from '../../domain/errors/already-enrolled-error';
+import { AlreadyEnrolledError } from '../../domain/errors';
 
 export class CourseEnroll {
   constructor(private enrollmentRepo: EnrollmentRepository) {}

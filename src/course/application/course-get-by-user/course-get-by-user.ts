@@ -17,14 +17,17 @@ export class CourseGetByUser {
 
     const courses = await this.courseRepo.getAllByIds(courseIds);
 
-    return courses.map(course => ({
-      id: course.id.getValue(),
-      title: course.title.getValue(),
-      description: course.description.getValue(),
-      numberOfLessons: course.numberOfLessons.getValue(),
-      enrolledAt: enrollments
-        .find(e => e.courseId.getValue() === course.id.getValue())
-        ?.enrolledAt.toISOString(),
-    }));
+    return courses.map(course => {
+      const enrollment = enrollments.find(
+        e => e.courseId.getValue() === course.getIdValue() // ✅ getIdValue()
+      );
+      return {
+        id: course.getIdValue(),
+        title: course.getTitleValue(),
+        description: course.getDescriptionValue(),
+        numberOfLessons: course.getNumberOfLessonsValue(),
+        enrolledAt: enrollment ? enrollment.enrolledAt.toISOString() : null,
+      };
+    });
   }
 }

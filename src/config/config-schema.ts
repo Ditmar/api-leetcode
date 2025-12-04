@@ -11,9 +11,7 @@ export const configSchema = z.object({
   }),
   JWT: z.object({
     secret: z.string().min(10),
-    expiresIn: z.number().min(1000),
+    expiresIn: z.union([z.string().regex(/^(\d+[smhd])$/), z.number().min(60)]),
     saltRounds: z.number().min(4).max(31),
   }),
 });
-
-export type Config = z.infer<typeof configSchema>;

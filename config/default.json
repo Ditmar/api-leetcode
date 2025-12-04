@@ -1,7 +1,7 @@
 {
   "app": {
     "port": 3000,
-    "nodeEnv": "",
+    "nodeEnv": "development",
     "logLevel": "info"
   },
   "database": {
@@ -9,7 +9,7 @@
   },
   "JWT": {
     "secret": "your_jwt_secret_key",
-    "expiresIn": 30000,
+    "expiresIn": "1h",
     "saltRounds": 10
   }
 }

@@ -8,20 +8,24 @@ export class CourseGetAll {
 
   async execute(params: GetCoursesParams) {
     // Validación de parámetros
-    if (params.page < 1) params.page = 1;
-    if (params.limit < 1) params.limit = 10;
-    if (params.limit > 100) params.limit = 100;
+    const safeParams = {
+      page: params.page > 0 ? params.page : 1,
+      limit: params.limit > 0 ? (params.limit > 100 ? 100 : params.limit) : 10,
+      search: params.search,
+      isActive: params.isActive,
+      orderBy: params.orderBy,
+    };
 
-    const result = await this.repository.getAll(params);
+    const result = await this.repository.getAll(safeParams);
 
     return {
       data: result.data.map(course => ({
-        id: course.id.getValue(),
-        title: course.title.getValue(),
-        description: course.description.getValue(),
-        numberOfLessons: course.numberOfLessons.getValue(),
-        isActive: course.isActive,
-        createdAt: course.createdAt.toISOString(),
+        id: course.getIdValue(),
+        title: course.getTitleValue(),
+        description: course.getDescriptionValue(),
+        numberOfLessons: course.getNumberOfLessonsValue(),
+        isActive: course.getIsActive(),
+        createdAt: course.getCreatedAt().toISOString(),
       })),
       pagination: {
         total: result.total,
