@@ -1,3 +1,4 @@
+// src/course/infrastructure/repository/course-prisma-repository.ts
 import { PrismaClient, Prisma } from '@prisma/client';
 import {
   CourseRepository,
@@ -47,17 +48,16 @@ export class CoursePrismaRepository implements CourseRepository {
     const totalPages = Math.ceil(total / params.limit);
 
     return {
-      data: data.map(
-        c =>
-          new Course(
-            c.id,
-            c.title,
-            c.description,
-            c.numberOfLessons,
-            c.isActive,
-            c.createdAt,
-            c.updatedAt
-          )
+      data: data.map(c =>
+        Course.create(
+          c.id,
+          c.title,
+          c.description,
+          c.numberOfLessons,
+          c.isActive,
+          c.createdAt,
+          c.updatedAt
+        )
       ),
       total,
       page: params.page,
@@ -69,7 +69,7 @@ export class CoursePrismaRepository implements CourseRepository {
   async getById(id: string): Promise<Course | null> {
     const course = await this.prisma.course.findUnique({ where: { id } });
     if (!course) return null;
-    return new Course(
+    return Course.create(
       course.id,
       course.title,
       course.description,
@@ -85,33 +85,32 @@ export class CoursePrismaRepository implements CourseRepository {
     const courses = await this.prisma.course.findMany({
       where: { id: { in: ids } },
     });
-    return courses.map(
-      c =>
-        new Course(
-          c.id,
-          c.title,
-          c.description,
-          c.numberOfLessons,
-          c.isActive,
-          c.createdAt,
-          c.updatedAt
-        )
+    return courses.map(c =>
+      Course.create(
+        c.id,
+        c.title,
+        c.description,
+        c.numberOfLessons,
+        c.isActive,
+        c.createdAt,
+        c.updatedAt
+      )
     );
   }
 
   async create(course: Course): Promise<Course> {
     const created = await this.prisma.course.create({
       data: {
-        id: course.id.getValue(),
-        title: course.title.getValue(),
-        description: course.description.getValue(),
-        numberOfLessons: course.numberOfLessons.getValue(),
-        isActive: course.isActive,
-        createdAt: course.createdAt,
-        updatedAt: course.updatedAt,
+        id: course.getIdValue(),
+        title: course.getTitleValue(),
+        description: course.getDescriptionValue(),
+        numberOfLessons: course.getNumberOfLessonsValue(),
+        isActive: course.getIsActive(),
+        createdAt: course.getCreatedAt(),
+        updatedAt: course.getUpdatedAt(),
       },
     });
-    return new Course(
+    return Course.create(
       created.id,
       created.title,
       created.description,

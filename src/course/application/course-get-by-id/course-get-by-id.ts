@@ -1,5 +1,5 @@
 import { CourseRepository } from '../../domain/repository/course-repository';
-import { CourseNotFoundError } from '../../domain/errors/course-not-found-error';
+import { CourseNotFoundError } from '../../domain/errors';
 
 export class CourseGetById {
   constructor(private repository: CourseRepository) {}

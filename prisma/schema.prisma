@@ -14,18 +14,18 @@ datasource db {
 // MODELO EXISTENTE - User
 // ============================================
 model User {
-  id           String        @id @default(uuid())
-  email        String        @unique
-  name         String
-  password     String
-  createdAt    DateTime      @default(now()) @map("created_at")
-  
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+
   // Relaciones
   testSessions TestSession[]
   submissions  Submission[]
   refreshTokens RefreshToken[]
   enrollments  Enrollment[]
-  
+
   @@map("users")
 }
 
@@ -57,10 +57,10 @@ model Company {
   name      String
   logo      String?
   createdAt DateTime @default(now()) @map("created_at")
-  
+
   // Relaciones
-  tests     Test[]
-  
+  tests Test[]
+
   @@map("companies")
 }
 
@@ -72,18 +72,18 @@ model Test {
   name        String
   description String
   companyId   String?  @map("company_id")
-  difficulty  String   // 'EASY', 'MEDIUM', 'HARD'
-  duration    Int      // minutos
+  difficulty  String // 'EASY', 'MEDIUM', 'HARD'
+  duration    Int // minutos
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  
+
   // Relaciones con Foreign Keys
   company      Company?      @relation(fields: [companyId], references: [id], onDelete: SetNull)
   questions    Question[]
   testSessions TestSession[]
   submissions  Submission[]
-  
+
   @@index([companyId])
   @@index([difficulty])
   @@index([isActive])
@@ -94,30 +94,30 @@ model Test {
 // NUEVOS MODELOS - Questions
 // ============================================
 model Question {
-  id              String   @id @default(uuid())
-  testId          String   @map("test_id")
-  type            String   // 'MCQ', 'PROGRAMMING'
-  text            String   @db.Text
-  difficulty      String   // 'EASY', 'MEDIUM', 'HARD'
-  points          Int      @default(1)
-  timeLimit       Int?     @map("time_limit") // segundos, opcional
-  order           Int      @default(0)
-  
+  id         String @id @default(uuid())
+  testId     String @map("test_id")
+  type       String // 'MCQ', 'PROGRAMMING'
+  text       String @db.Text
+  difficulty String // 'EASY', 'MEDIUM', 'HARD'
+  points     Int    @default(1)
+  timeLimit  Int?   @map("time_limit") // segundos, opcional
+  order      Int    @default(0)
+
   // Para MCQ - almacenado como JSON
-  options         Json?    // [{ id: "A", text: "Opción A" }, ...]
-  correctAnswer   Json?    @map("correct_answer") // ["A", "C"] para respuestas correctas
-  
+  options       Json? // [{ id: "A", text: "Opción A" }, ...]
+  correctAnswer Json? @map("correct_answer") // ["A", "C"] para respuestas correctas
+
   // Para Programming - almacenado como JSON
-  programmingData Json?    @map("programming_data") 
+  programmingData Json? @map("programming_data")
   // { starterCode: "...", testCases: [...], expectedOutput: "..." }
-  
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   // Relaciones con Foreign Keys
-  test            Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
-  answers         Answer[]
-  
+  test    Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  answers Answer[]
+
   @@index([testId])
   @@index([type])
   @@index([difficulty])
@@ -128,19 +128,19 @@ model Question {
 // NUEVOS MODELOS - Test Sessions
 // ============================================
 model TestSession {
-  id         String      @id @default(uuid())
-  testId     String      @map("test_id")
-  userId     String      @map("user_id")
-  startedAt  DateTime    @default(now()) @map("started_at")
-  expiresAt  DateTime    @map("expires_at")
-  isActive   Boolean     @default(true) @map("is_active")
-  
+  id        String   @id @default(uuid())
+  testId    String   @map("test_id")
+  userId    String   @map("user_id")
+  startedAt DateTime @default(now()) @map("started_at")
+  expiresAt DateTime @map("expires_at")
+  isActive  Boolean  @default(true) @map("is_active")
+
   // Relaciones con Foreign Keys
   test       Test        @relation(fields: [testId], references: [id], onDelete: Cascade)
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   answers    Answer[]
   submission Submission?
-  
+
   @@index([userId])
   @@index([testId])
   @@index([expiresAt])
@@ -152,25 +152,25 @@ model TestSession {
 // NUEVOS MODELOS - Answers
 // ============================================
 model Answer {
-  id              String      @id @default(uuid())
-  sessionId       String      @map("session_id")
-  questionId      String      @map("question_id")
-  
+  id         String @id @default(uuid())
+  sessionId  String @map("session_id")
+  questionId String @map("question_id")
+
   // Para MCQ
-  selectedOption  String?     @map("selected_option") // "A", "B", "C", etc.
-  
+  selectedOption String? @map("selected_option") // "A", "B", "C", etc.
+
   // Para Programming
-  code            String?     @db.Text
-  language        String?
-  
-  isCorrect       Boolean?    @map("is_correct")
-  points          Int?
-  answeredAt      DateTime    @default(now()) @map("answered_at")
-  
+  code     String? @db.Text
+  language String?
+
+  isCorrect  Boolean? @map("is_correct")
+  points     Int?
+  answeredAt DateTime @default(now()) @map("answered_at")
+
   // Relaciones con Foreign Keys
-  session         TestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  question        Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  
+  session  TestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
   @@unique([sessionId, questionId])
   @@index([sessionId])
   @@index([questionId])
@@ -181,20 +181,20 @@ model Answer {
 // NUEVOS MODELOS - Submissions
 // ============================================
 model Submission {
-  id          String      @id @default(uuid())
-  testId      String      @map("test_id")
-  sessionId   String      @unique @map("session_id")
-  userId      String      @map("user_id")
+  id          String   @id @default(uuid())
+  testId      String   @map("test_id")
+  sessionId   String   @unique @map("session_id")
+  userId      String   @map("user_id")
   score       Float
-  maxScore    Float       @map("max_score")
-  breakdown   Json        // { correct: 10, incorrect: 2, total: 12 }
-  submittedAt DateTime    @default(now()) @map("submitted_at")
-  
+  maxScore    Float    @map("max_score")
+  breakdown   Json // { correct: 10, incorrect: 2, total: 12 }
+  submittedAt DateTime @default(now()) @map("submitted_at")
+
   // Relaciones con Foreign Keys
-  test        Test        @relation(fields: [testId], references: [id], onDelete: Cascade)
-  session     TestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  test    Test        @relation(fields: [testId], references: [id], onDelete: Cascade)
+  session TestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([testId])
   @@index([userId])
   @@index([submittedAt])
@@ -202,27 +202,34 @@ model Submission {
 }
 
 model Course {
-  id               String      @id @default(uuid())
-  title            String
-  description      String      @db.Text
-  numberOfLessons  Int
-  isActive         Boolean     @default(true) @map("is_active")
-  createdAt        DateTime    @default(now()) @map("created_at")
-  updatedAt        DateTime    @updatedAt @map("updated_at")
+  id              String   @id @default(uuid())
+  title           String
+  description     String   @db.Text
+  numberOfLessons Int      @map("number_of_lessons")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
   // Relaciones
-  enrollments      Enrollment[]
+  enrollments Enrollment[]
+
   @@index([isActive])
   @@map("courses")
 }
 
+// ============================================
+// MODELS - Enrollment
+// ============================================
 model Enrollment {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  courseId  String   @map("course_id")
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  courseId   String   @map("course_id")
   enrolledAt DateTime @default(now()) @map("enrolled_at")
-  // Relaciones con Foreign Keys
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  // ✅ FIX: onDelete CASCADE consistente con la migración SQL
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
   @@unique([userId, courseId])
   @@index([userId])
   @@index([courseId])

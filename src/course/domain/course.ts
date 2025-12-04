@@ -1,44 +1,76 @@
+// src/course/domain/course.ts
 import { CourseId } from './course-id';
 import { CourseTitle } from './course-title';
 import { CourseDescription } from './course-description';
 import { CourseNumberOfLessons } from './course-number-of-lessons';
 
 export class Course {
-  id: CourseId;
-  title: CourseTitle;
-  description: CourseDescription;
-  numberOfLessons: CourseNumberOfLessons;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  private constructor(
+    private readonly id: CourseId,
+    private readonly title: CourseTitle,
+    private readonly description: CourseDescription,
+    private readonly numberOfLessons: CourseNumberOfLessons,
+    private readonly isActive: boolean,
+    private readonly createdAt: Date,
+    private readonly updatedAt: Date
+  ) {}
 
-  constructor(
+  // ✅ Constructor público: acepta raw values (para repositorios)
+  public static create(
     id: string,
     title: string,
     description: string,
     numberOfLessons: number,
     isActive: boolean = true,
-    createdAt?: Date,
-    updatedAt?: Date
-  ) {
-    this.id = new CourseId(id);
-    this.title = new CourseTitle(title);
-    this.description = new CourseDescription(description);
-    this.numberOfLessons = new CourseNumberOfLessons(numberOfLessons);
-    this.isActive = isActive;
-    this.createdAt = createdAt ?? new Date();
-    this.updatedAt = updatedAt ?? new Date();
+    createdAt: Date = new Date(),
+    updatedAt: Date = new Date()
+  ): Course {
+    return new Course(
+      new CourseId(id),
+      new CourseTitle(title),
+      new CourseDescription(description),
+      new CourseNumberOfLessons(numberOfLessons),
+      isActive,
+      createdAt,
+      updatedAt
+    );
   }
 
-  public toJSON() {
+  // ✅ Getters
+  getId() {
+    return this.id;
+  }
+  getIdValue() {
+    return this.id.getValue();
+  }
+  getTitleValue() {
+    return this.title.getValue();
+  }
+  getDescriptionValue() {
+    return this.description.getValue();
+  }
+  getNumberOfLessonsValue() {
+    return this.numberOfLessons.getValue();
+  }
+  getIsActive() {
+    return this.isActive;
+  }
+  getCreatedAt() {
+    return this.createdAt;
+  }
+  getUpdatedAt() {
+    return this.updatedAt;
+  }
+
+  toJSON() {
     return {
-      id: this.id.getValue(),
-      title: this.title.getValue(),
-      description: this.description.getValue(),
-      numberOfLessons: this.numberOfLessons.getValue(),
-      isActive: this.isActive,
-      createdAt: this.createdAt.toISOString(),
-      updatedAt: this.updatedAt.toISOString(),
+      id: this.getIdValue(),
+      title: this.getTitleValue(),
+      description: this.getDescriptionValue(),
+      numberOfLessons: this.getNumberOfLessonsValue(),
+      isActive: this.getIsActive(),
+      createdAt: this.getCreatedAt().toISOString(),
+      updatedAt: this.getUpdatedAt().toISOString(),
     };
   }
 }
