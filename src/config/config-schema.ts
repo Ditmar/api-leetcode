@@ -13,6 +13,8 @@ export const configSchema = z.object({
     secret: z.string().min(10),
     expiresIn: z.number().min(1000),
     saltRounds: z.number().min(4).max(31),
+    refreshTokenSecret: z.string().min(10),
+    refreshTokenExpiresIn: z.number().min(1000),
   }),
 });
 

@@ -12,9 +12,7 @@ export class AuthMockRepository implements AuthRepository {
   }
 
   async findByEmail(email: AuthUserEmail): Promise<AuthUser | null> {
-    const user = this.users.find(
-      u => u.email.getValue() === email.getValue()
-    );
+    const user = this.users.find(u => u.email.getValue() === email.getValue());
     return user ?? null;
   }
 
