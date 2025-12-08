@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { config } from '@config';
 import logger from '@logger';
 import express, { Application, Request, Response } from 'express';
@@ -25,7 +28,7 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
-app.get('/health', (req: Request, res: Response) => {
+app.use('/health', (req: Request, res: Response) => {
   res.json({
     status: 'OK',
     uptime: process.uptime(),
@@ -43,9 +46,14 @@ app.use('*', (req: Request, res: Response) => {
   });
 });
 
-app.listen(config.app.port, () => {
+const server = app.listen(config.app.port, () => {
   logger.info(`Server is running on port ${config.app.port}`);
   logger.info(`Environment: ${config.app.nodeEnv}`);
+});
+
+server.on('error', (err: Error) => {
+  logger.error(`Failed to start server: ${err.message}`);
+  process.exit(1);
 });
 
 export default app;

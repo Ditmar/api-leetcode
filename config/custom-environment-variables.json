@@ -10,6 +10,8 @@
   "JWT": {
     "secret": "JWT_SECRET",
     "expiresIn": "JWT_EXPIRES_IN",
-    "saltRounds": "JWT_SALT_ROUNDS"
+    "saltRounds": "JWT_SALT_ROUNDS",
+    "refreshTokenSecret": "JWT_REFRESH_TOKEN_SECRET",
+    "refreshTokenExpiresIn": "JWT_REFRESH_TOKEN_EXPIRES_IN"
   }
 }
