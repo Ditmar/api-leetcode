@@ -1,7 +1,7 @@
 {
   "app": {
     "port": 3000,
-    "nodeEnv": "",
+    "nodeEnv": "development",
     "logLevel": "info"
   },
   "database": {
