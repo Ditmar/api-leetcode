@@ -5,17 +5,26 @@ import {
   UserNotFoundError,
   ValidationError,
 } from '../../domain/errors/auth-errors';
+import {
+  RefreshTokenNotFoundError,
+  RefreshTokenExpiredError,
+  RefreshTokenRevokedError,
+} from '../../domain/errors/refresh-token-errors';
 import logger from '@logger';
 import { AuthSignup } from '../../application/auth-signup/auth-signup';
 import { AuthLogin } from '../../application/auth-login/auth-login';
 import { AuthGetMe } from '../../application/auth-get-me/auth-get-me';
+import { AuthRefreshToken } from '../../application/auth-refresh-token/auth-refresh-token';
+import { AuthLogout } from '../../application/auth-logout/auth-logout';
 
 //  FIX: Use dependency injection instead of global singleton
 export class ExpressAuthController {
   constructor(
     private signupUseCase: AuthSignup,
     private loginUseCase: AuthLogin,
-    private getMeUseCase: AuthGetMe
+    private getMeUseCase: AuthGetMe,
+    private refreshTokenUseCase: AuthRefreshToken,
+    private logoutUseCase: AuthLogout
   ) {}
 
   async signup(req: Request, res: Response): Promise<void> {
@@ -155,6 +164,92 @@ export class ExpressAuthController {
       res.status(500).json({
         error: 'Internal server error',
         message: 'Error getting user information',
+      });
+    }
+  }
+
+  async refreshToken(req: Request, res: Response): Promise<void> {
+    try {
+      const { refreshToken } = req.body;
+
+      if (!refreshToken) {
+        res.status(400).json({
+          error: 'Missing required fields',
+          message: 'Refresh token is required',
+        });
+        return;
+      }
+
+      const result = await this.refreshTokenUseCase.execute(refreshToken);
+
+      logger.info('Access token refreshed successfully');
+
+      res.status(200).json(result);
+    } catch (error) {
+      if (error instanceof RefreshTokenNotFoundError) {
+        res.status(404).json({
+          error: 'Refresh token not found',
+          message: error.message,
+        });
+        return;
+      }
+
+      if (error instanceof RefreshTokenExpiredError) {
+        res.status(401).json({
+          error: 'Refresh token expired',
+          message: error.message,
+        });
+        return;
+      }
+
+      if (error instanceof RefreshTokenRevokedError) {
+        res.status(401).json({
+          error: 'Refresh token revoked',
+          message: error.message,
+        });
+        return;
+      }
+
+      logger.error({ message: 'Unexpected error in refreshToken', error });
+      res.status(500).json({
+        error: 'Internal server error',
+        message: 'Error refreshing token',
+      });
+    }
+  }
+
+  async logout(req: Request, res: Response): Promise<void> {
+    try {
+      const { refreshToken } = req.body;
+
+      if (!refreshToken) {
+        res.status(400).json({
+          error: 'Missing required fields',
+          message: 'Refresh token is required',
+        });
+        return;
+      }
+
+      await this.logoutUseCase.execute(refreshToken);
+
+      logger.info('User logged out successfully');
+
+      res.status(200).json({
+        message: 'Logged out successfully',
+      });
+    } catch (error) {
+      if (error instanceof RefreshTokenNotFoundError) {
+        res.status(404).json({
+          error: 'Refresh token not found',
+          message: error.message,
+        });
+        return;
+      }
+
+      logger.error({ message: 'Unexpected error in logout', error });
+      res.status(500).json({
+        error: 'Internal server error',
+        message: 'Error logging out',
       });
     }
   }
