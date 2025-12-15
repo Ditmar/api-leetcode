@@ -1,8 +1,8 @@
 import { config } from '@config';
 import bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
+const { v4: uuidv4 } = require('uuid');
 import { AuthUser } from '../../domain/auth-user';
-import { AuthUserName } from 'auth/domain/auth-user-name';
+import { AuthUserName } from '../../domain/auth-user-name';
 import { AuthUserEmail } from '../../domain/auth-user-email';
 import { AuthUserPassword } from '../../domain/auth-user-password';
 import { UserAlreadyExistsError } from '../../domain/errors/auth-errors';

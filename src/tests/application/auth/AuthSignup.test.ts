@@ -1,54 +1,45 @@
 import { AuthSignup } from '../../../auth/application/auth-signup/auth-signup';
 import { AuthMockRepository } from '../../../auth/infrastructure/repository/auth-mock-repository';
 import { UserAlreadyExistsError } from '../../../auth/domain/errors/auth-errors';
+jest.mock('uuid');
+describe('AuthSignup', () => {
+  let repo: AuthMockRepository;
+  let signup: AuthSignup;
 
-export async function testAuthSignup() {
-  console.log('Running AuthSignup tests...');
+  beforeEach(() => {
+    repo = new AuthMockRepository();
+    signup = new AuthSignup(repo);
+  });
 
-  const repo = new AuthMockRepository();
-  const signup = new AuthSignup(repo);
-
-  // Case 1: Successful registration
-  try {
+  it('should register a new user successfully', async () => {
     const user = await signup.execute(
       'john_doe',
       'john@example.com',
       '12345678'
     );
-    console.log('Successful registration:', user.toJSON());
-  } catch (err) {
-    console.error(' Failed successful registration', err);
-  }
+    expect(user.toJSON()).toMatchObject({
+      name: 'john_doe',
+      email: 'john@example.com',
+    });
+  });
 
-  // Case 2: Duplicate email
-  try {
-    await signup.execute('john_doe2', 'john@example.com', '12345678');
-    console.error('Did not throw error for duplicate email');
-  } catch (err) {
-    if (err instanceof UserAlreadyExistsError) {
-      console.log('Expected error for duplicate email:', err.message);
-    } else {
-      console.error('Unexpected error for duplicate email', err);
-    }
-  }
+  it('should throw error for duplicate email', async () => {
+    await signup.execute('john_doe', 'john@example.com', '12345678');
+    await expect(
+      signup.execute('john_doe2', 'john@example.com', '12345678')
+    ).rejects.toThrow(UserAlreadyExistsError);
+  });
 
-  // Case 3: Duplicate username
-  try {
-    await signup.execute('john_doe', 'john2@example.com', '12345678');
-    console.error('Did not throw error for duplicate username');
-  } catch (err) {
-    if (err instanceof UserAlreadyExistsError) {
-      console.log('Expected error for duplicate username:', err.message);
-    } else {
-      console.error('Unexpected error for duplicate username', err);
-    }
-  }
+  it('should throw error for duplicate username', async () => {
+    await signup.execute('john_doe', 'john@example.com', '12345678');
+    await expect(
+      signup.execute('john_doe', 'john2@example.com', '12345678')
+    ).rejects.toThrow(UserAlreadyExistsError);
+  });
 
-  // Case 4: Invalid password (< 8 characters)
-  try {
-    await signup.execute('short_pass', 'short@example.com', '123');
-    console.error('Did not throw error for invalid password');
-  } catch (err) {
-    console.log('Expected error for invalid password:', (err as Error).message);
-  }
-}
+  it('should throw error for invalid password', async () => {
+    await expect(
+      signup.execute('short_pass', 'short@example.com', '123')
+    ).rejects.toThrow('Password must be at least 8 characters long');
+  });
+});

@@ -7,6 +7,7 @@ import { AuthRepository } from '../../domain/repository/auth-repository';
 
 export interface LoginResponse {
   token: string;
+  expiresIn: number;
   user: {
     id: string;
     name: string;
@@ -34,7 +35,7 @@ export class AuthLogin {
       throw new InvalidCredentialsError();
     }
 
-    //  FIX: Use validated config and explicit algorithm
+    //  Use validated config and explicit algorithm
     const options: SignOptions = {
       expiresIn: config.JWT.expiresIn as any,
       algorithm: 'HS256',
@@ -51,6 +52,7 @@ export class AuthLogin {
 
     return {
       token,
+      expiresIn: options.expiresIn as number,
       user: {
         id: user.id.getValue(),
         name: user.name.getValue(),

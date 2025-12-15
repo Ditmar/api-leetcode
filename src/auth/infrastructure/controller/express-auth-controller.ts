@@ -32,8 +32,14 @@ export class ExpressAuthController {
 
       const user = await this.signupUseCase.execute(name, email, password);
 
-      logger.info(`User registered successfully: ${user.email.getValue()}`);
-
+      logger.info(
+        {
+          userId: user.id.getValue(),
+          email: user.email.getValue(),
+          outcome: 'success',
+        },
+        'user.signup'
+      );
       res.status(201).json({
         message: 'User registered successfully',
         user: user.toJSON(),
@@ -92,9 +98,13 @@ export class ExpressAuthController {
       }
 
       const result = await this.loginUseCase.execute(email, password);
+
+      logger.info({ userId: result.user.id, outcome: 'success' }, 'user.login');
+
       res.status(200).json({
         access_token: result.token,
         token_type: 'Bearer',
+        expires_in: result.expiresIn,
       });
     } catch (error) {
       if (error instanceof InvalidCredentialsError) {

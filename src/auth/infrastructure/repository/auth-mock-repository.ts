@@ -2,7 +2,7 @@ import { AuthRepository } from '../../domain/repository/auth-repository';
 import { AuthUser } from '../../domain/auth-user';
 import { AuthUserEmail } from '../../domain/auth-user-email';
 import { AuthUserId } from '../../domain/auth-user-id';
-import { AuthUserName } from 'auth/domain/auth-user-name';
+import { AuthUserName } from '../../domain/auth-user-name';
 
 export class AuthMockRepository implements AuthRepository {
   private users: AuthUser[] = [];
@@ -12,7 +12,9 @@ export class AuthMockRepository implements AuthRepository {
     return user;
   }
   async findByName(name: AuthUserName): Promise<AuthUser | null> {
-    const user = this.users.find(u => u.name.getValue() === name.getValue());
+    const user = this.users.find(
+      u => u.name.getValue() === name.getValue().toLowerCase()
+    );
     return user ?? null;
   }
 

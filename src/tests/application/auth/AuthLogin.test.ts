@@ -3,52 +3,40 @@ import { AuthMockRepository } from '../../../auth/infrastructure/repository/auth
 import { InvalidCredentialsError } from '../../../auth/domain/errors/auth-errors';
 import bcrypt from 'bcrypt';
 import { AuthUser } from '../../../auth/domain/auth-user';
+jest.mock('uuid');
+describe('AuthLogin', () => {
+  let repo: AuthMockRepository;
+  let login: AuthLogin;
 
-export async function testAuthLogin() {
-  console.log('Running AuthLogin tests...');
+  beforeEach(async () => {
+    repo = new AuthMockRepository();
+    login = new AuthLogin(repo);
 
-  const repo = new AuthMockRepository();
-  const login = new AuthLogin(repo);
+    const hashedPassword = await bcrypt.hash('12345678', 10);
+    const user = new AuthUser(
+      '1',
+      'john_doe',
+      'john@example.com',
+      hashedPassword
+    );
+    await repo.create(user);
+  });
 
-  // Prepare valid user
-  const hashedPassword = await bcrypt.hash('12345678', 10);
-  const user = new AuthUser(
-    '1',
-    'john_doe',
-    'john@example.com',
-    hashedPassword
-  );
-  await repo.create(user);
-
-  // Case 1: Successful login
-  try {
+  it('should login successfully with valid credentials', async () => {
     const result = await login.execute('john@example.com', '12345678');
-    console.log('Successful login:', result);
-  } catch (err) {
-    console.error('Failed successful login', err);
-  }
+    expect(result).toHaveProperty('token');
+    expect(result.user.email).toBe('john@example.com');
+  });
 
-  // Case 2: Non-existent email
-  try {
-    await login.execute('nope@example.com', '12345678');
-    console.error('Did not throw error for non-existent email');
-  } catch (err) {
-    if (err instanceof InvalidCredentialsError) {
-      console.log('Expected error for non-existent email:', err.message);
-    } else {
-      console.error('Unexpected error for non-existent email', err);
-    }
-  }
+  it('should throw error for non-existent email', async () => {
+    await expect(login.execute('nope@example.com', '12345678')).rejects.toThrow(
+      InvalidCredentialsError
+    );
+  });
 
-  // Case 3: Wrong password
-  try {
-    await login.execute('john@example.com', 'wrongpass');
-    console.error('Did not throw error for wrong password');
-  } catch (err) {
-    if (err instanceof InvalidCredentialsError) {
-      console.log('Expected error for wrong password:', err.message);
-    } else {
-      console.error('Unexpected error for wrong password', err);
-    }
-  }
-}
+  it('should throw error for wrong password', async () => {
+    await expect(
+      login.execute('john@example.com', 'wrongpass')
+    ).rejects.toThrow(InvalidCredentialsError);
+  });
+});

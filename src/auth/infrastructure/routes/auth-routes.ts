@@ -22,7 +22,8 @@ const authController = new ExpressAuthController(
 const authRoutes = Router();
 
 // Public routes
-authRoutes.post('/register', (req, res) => authController.signup(req, res)); //changed to check requeriments of ticket
+authRoutes.post('/signup', (req, res) => authController.signup(req, res));
+authRoutes.post('/register', (req, res) => authController.signup(req, res));
 authRoutes.post('/login', (req, res) => authController.login(req, res));
 
 // Protected routes
