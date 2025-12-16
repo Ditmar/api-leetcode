@@ -25,6 +25,13 @@ import { StartTestUseCase } from '../../tests/application/start-test/StartTestUs
 import { GetQuestionsUseCase } from '../../tests/application/get-questions/GetQuestionsUseCase';
 import { SubmitTestUseCase } from '../../tests/application/submit-test/SubmitTestUseCase';
 
+import { CoursePrismaRepository } from '../../course/infrastructure/repository/course-prisma-repository';
+import { EnrollmentPrismaRepository } from '../../course/infrastructure/repository/enrollment-prisma-repository';
+import { CourseGetAll } from '../../course/application/course-get-all/course-get-all';
+import { CourseGetById } from '../../course/application/course-get-by-id/course-get-by-id';
+import { CourseEnroll } from '../../course/application/course-enroll/course-enroll';
+import { CourseGetByUser } from '../../course/application/course-get-by-user/course-get-by-user';
+
 // ============================================
 // REPOSITORIES
 // ============================================
@@ -32,6 +39,8 @@ const userRepository = new UserMockRepository();
 const authRepository = new AuthPrismaRepository(prisma);
 const refreshTokenRepository = new RefreshTokenPrismaRepository(prisma);
 const testRepository = new TestPrismaRepository(prisma);
+const courseRepository = new CoursePrismaRepository(prisma);
+const enrollmentRepository = new EnrollmentPrismaRepository(prisma);
 
 // ============================================
 // EXPORT SERVICES
@@ -55,5 +64,11 @@ export const services = {
     start: new StartTestUseCase(testRepository),
     getQuestions: new GetQuestionsUseCase(testRepository),
     submit: new SubmitTestUseCase(testRepository),
+  },
+  course: {
+    getAll: new CourseGetAll(courseRepository),
+    getById: new CourseGetById(courseRepository),
+    enroll: new CourseEnroll(enrollmentRepository),
+    getByUser: new CourseGetByUser(enrollmentRepository, courseRepository),
   },
 };

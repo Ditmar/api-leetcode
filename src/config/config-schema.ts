@@ -17,5 +17,3 @@ export const configSchema = z.object({
     refreshTokenExpiresIn: z.coerce.number().min(1000),
   }),
 });
-
-export type Config = z.infer<typeof configSchema>;
