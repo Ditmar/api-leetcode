@@ -8,7 +8,6 @@ export class CourseEnroll {
     userId: string,
     courseId: string
   ): Promise<{ enrollmentId: string }> {
-    // Verificar si ya está inscrito
     const existing = await this.enrollmentRepo.findByUserAndCourse(
       userId,
       courseId
@@ -17,7 +16,6 @@ export class CourseEnroll {
       throw new AlreadyEnrolledError(userId, courseId);
     }
 
-    // Crear inscripción
     const enrollment = await this.enrollmentRepo.create(userId, courseId);
     return { enrollmentId: enrollment.id.getValue() };
   }

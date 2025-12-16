@@ -7,7 +7,6 @@ export class CourseGetAll {
   constructor(private repository: CourseRepository) {}
 
   async execute(params: GetCoursesParams) {
-    // Validación de parámetros
     const safeParams = {
       page: params.page > 0 ? params.page : 1,
       limit: params.limit > 0 ? (params.limit > 100 ? 100 : params.limit) : 10,

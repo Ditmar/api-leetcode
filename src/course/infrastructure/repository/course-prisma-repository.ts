@@ -1,4 +1,3 @@
-// src/course/infrastructure/repository/course-prisma-repository.ts
 import { PrismaClient, Prisma } from '@prisma/client';
 import {
   CourseRepository,

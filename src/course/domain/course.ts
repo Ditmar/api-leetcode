@@ -1,4 +1,3 @@
-// src/course/domain/course.ts
 import { CourseId } from './course-id';
 import { CourseTitle } from './course-title';
 import { CourseDescription } from './course-description';
@@ -15,7 +14,6 @@ export class Course {
     private readonly updatedAt: Date
   ) {}
 
-  // ✅ Constructor público: acepta raw values (para repositorios)
   public static create(
     id: string,
     title: string,
@@ -36,7 +34,6 @@ export class Course {
     );
   }
 
-  // ✅ Getters
   getId() {
     return this.id;
   }

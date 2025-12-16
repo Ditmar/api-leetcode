@@ -210,23 +210,18 @@ model Course {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  // Relaciones
   enrollments Enrollment[]
 
   @@index([isActive])
   @@map("courses")
 }
 
-// ============================================
-// MODELS - Enrollment
-// ============================================
 model Enrollment {
   id         String   @id @default(uuid())
   userId     String   @map("user_id")
   courseId   String   @map("course_id")
   enrolledAt DateTime @default(now()) @map("enrolled_at")
 
-  // ✅ FIX: onDelete CASCADE consistente con la migración SQL
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
