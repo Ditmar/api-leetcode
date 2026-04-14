@@ -6,7 +6,7 @@ import { UserDelete } from '../../user/application/user-delete.ts/user-delete';
 import { UserEdit } from '../../user/application/user-edit/user-edit';
 import { UserGetAll } from '../../user/application/user-get-all/user-get-all';
 import { UserGetById } from '../../user/application/user-get-by-id/user-get-by-id';
-import { UserMockRepository } from '../../user/infrastructure/repository/user-mock-repository';
+import { UserPrismaRepository } from '../../user/infrastructure/repository/user-prisma-repository';
 
 import { AuthGetMe } from '../../auth/application/auth-get-me/auth-get-me';
 import { AuthLogin } from '../../auth/application/auth-login/auth-login';
@@ -35,7 +35,7 @@ import { CourseGetByUser } from '../../course/application/course-get-by-user/cou
 // ============================================
 // REPOSITORIES
 // ============================================
-const userRepository = new UserMockRepository();
+const userRepository = new UserPrismaRepository(prisma);
 const authRepository = new AuthPrismaRepository(prisma);
 const refreshTokenRepository = new RefreshTokenPrismaRepository(prisma);
 const testRepository = new TestPrismaRepository(prisma);
