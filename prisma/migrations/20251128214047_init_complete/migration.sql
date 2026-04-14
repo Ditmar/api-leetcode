@@ -1,3 +1,19 @@
+-- Drop FK constraints from previous migrations before recreating tables
+ALTER TABLE "answers" DROP CONSTRAINT IF EXISTS "answers_questionId_fkey";
+
+-- Drop old tables from 20251116172358 and 20251123043626 migrations
+DROP TABLE IF EXISTS "answers";
+DROP TABLE IF EXISTS "submissions";
+DROP TABLE IF EXISTS "test_sessions";
+DROP TABLE IF EXISTS "questions";
+DROP TABLE IF EXISTS "tests";
+DROP TABLE IF EXISTS "companies";
+DROP TABLE IF EXISTS "users";
+
+-- Drop old enums from 20251116172358 migration
+DROP TYPE IF EXISTS "QuestionType";
+DROP TYPE IF EXISTS "DifficultyLevel";
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
