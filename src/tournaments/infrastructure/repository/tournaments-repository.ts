@@ -1,17 +1,21 @@
+import { PrismaClient } from '@prisma/client';
 import { Tournament } from 'tournaments/domain/tournament';
 import { TournamentId } from 'tournaments/domain/tournament-id';
 import { TournamentPort } from '../../domain/port/tournament-port';
-import { PrismaClient } from '@prisma/client';
+import { TournamentBrand } from 'tournaments/domain/tournament-brand';
+import { TournamentName } from 'tournaments/domain/tournament-name';
 
 export class TournamentsRepository implements TournamentPort {
   constructor(private prisma: PrismaClient) {}
-  async createTournament(tournament: Tournament): Promise<Tournament> {
+  async createTournament(
+    name: TournamentName,
+    brand: TournamentBrand
+  ): Promise<Tournament> {
     const result = await this.prisma.tournament.create({
       data: {
-        id: tournament.getId().getValue(),
-        name: tournament.getName().getValue(),
-        date: tournament.getDate().getValue(),
-        brand: tournament.getBrand().getValue(),
+        name: name.getValue(),
+        date: new Date(),
+        brand: brand.getValue(),
       },
     });
     return new Tournament(result.id, result.name, result.date, result.brand);

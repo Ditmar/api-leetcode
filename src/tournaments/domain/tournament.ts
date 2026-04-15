@@ -1,7 +1,7 @@
 import { TournamentId } from './tournament-id';
 import { TournamentName } from './tournament-name';
 import { TournamentDate } from './tournament-date';
-import { TournamentBrand } from './tourname-brand';
+import { TournamentBrand } from './tournament-brand';
 
 export class Tournament {
   private id: TournamentId;
