@@ -28,6 +28,9 @@
       "prettier --write"
     ]
   },
+  "engines": {
+    "node": ">=22.20.0"
+  },
   "devDependencies": {
     "@types/bcrypt": "6.0.0",
     "@types/config": "^3.3.5",
