@@ -1,0 +1,26 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+
+# Source files (not needed in image)
+src
+
+# Dev/local files
+.env
+.env.*
+local-database
+nodemon.json
+*.log
+
+# Git
+.git
+.gitignore
+
+# Editor
+.vscode
+.idea
+
+# TypeScript source maps and declarations are in dist/ already
+tsconfig.json
