@@ -230,3 +230,11 @@ model Enrollment {
   @@index([courseId])
   @@map("enrollments")
 }
+
+model Tournament {
+  id          String   @id @default(uuid())
+  name        String
+  date        DateTime @map("start_date")
+  brand       String
+  @@map("tournaments")
+}

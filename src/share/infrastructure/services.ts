@@ -32,6 +32,10 @@ import { CourseGetById } from '../../course/application/course-get-by-id/course-
 import { CourseEnroll } from '../../course/application/course-enroll/course-enroll';
 import { CourseGetByUser } from '../../course/application/course-get-by-user/course-get-by-user';
 
+import { TournamentCreate } from '../../tournaments/application/tournament-create';
+import { TournamentGetById } from '../../tournaments/application/tournament-get-by-id';
+import { TournamentGetAll } from '../../tournaments/application/tournament-get-all';
+import { TournamentsRepository } from '../../tournaments/infrastructure/repository/tournaments-repository';
 // ============================================
 // REPOSITORIES
 // ============================================
@@ -41,7 +45,7 @@ const refreshTokenRepository = new RefreshTokenPrismaRepository(prisma);
 const testRepository = new TestPrismaRepository(prisma);
 const courseRepository = new CoursePrismaRepository(prisma);
 const enrollmentRepository = new EnrollmentPrismaRepository(prisma);
-
+const tournamentsRepository = new TournamentsRepository(prisma);
 // ============================================
 // EXPORT SERVICES
 // ============================================
@@ -70,5 +74,10 @@ export const services = {
     getById: new CourseGetById(courseRepository),
     enroll: new CourseEnroll(enrollmentRepository),
     getByUser: new CourseGetByUser(enrollmentRepository, courseRepository),
+  },
+  tournaments: {
+    create: new TournamentCreate(tournamentsRepository),
+    getById: new TournamentGetById(tournamentsRepository),
+    getAll: new TournamentGetAll(tournamentsRepository),
   },
 };
