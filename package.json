@@ -1,5 +1,5 @@
 {
-  "name": "hex",
+  "name": "api-leetcode",
   "version": "0.0.1",
   "description": "Express API with TypeScript",
   "main": "dist/index.js",
