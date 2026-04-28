@@ -23,6 +23,8 @@ jobs:
         run: npx prisma generate
       - name: Build app
         run: npm run build
+      - name: Get package json version
+        run: echo "VERSION=$(node -p -e "require('./package.json').version")" >> $GITHUB_ENV
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to Docker Hub
@@ -35,4 +37,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ditmar/api-leetcode:latest
+          tags: ditmar/api-leetcode:${{ env.VERSION }}
