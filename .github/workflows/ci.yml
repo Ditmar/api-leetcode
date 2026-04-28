@@ -20,7 +20,9 @@ jobs:
       - name: Prisma generate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npx prisma generate
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" # Debugging line to check if the secret is available
+          npx prisma generate
       - name: Build app
         run: npm run build
       - name: Set up Docker Buildx
