@@ -27,6 +27,7 @@ app.get('/', (req: Request, res: Response) => {
       users: '/api/user',
       tests: '/api/tests',
       courses: '/api/courses',
+      explore: '/api/explore',
     },
   });
 });
