@@ -20,11 +20,12 @@ model User {
   password  String
   createdAt DateTime @default(now()) @map("created_at")
 
-  // Relaciones
-  testSessions TestSession[]
-  submissions  Submission[]
-  refreshTokens RefreshToken[]
-  enrollments  Enrollment[]
+  // Relations
+  testSessions       TestSession[]
+  submissions        Submission[]
+  refreshTokens      RefreshToken[]
+  enrollments        Enrollment[]
+  problemSubmissions ProblemSubmission[]
 
   @@map("users")
 }
@@ -39,10 +40,10 @@ model RefreshToken {
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
   isRevoked Boolean  @default(false) @map("is_revoked")
-  
-  // Relaciones
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([token])
   @@index([expiresAt])
@@ -50,7 +51,7 @@ model RefreshToken {
 }
 
 // ============================================
-// NUEVOS MODELOS - Companies
+// MODELO - Company
 // ============================================
 model Company {
   id        String   @id @default(uuid())
@@ -58,27 +59,27 @@ model Company {
   logo      String?
   createdAt DateTime @default(now()) @map("created_at")
 
-  // Relaciones
+  // Relations
   tests Test[]
 
   @@map("companies")
 }
 
 // ============================================
-// NUEVOS MODELOS - Tests
+// MODELO - Test
 // ============================================
 model Test {
   id          String   @id @default(uuid())
   name        String
   description String
   companyId   String?  @map("company_id")
-  difficulty  String // 'EASY', 'MEDIUM', 'HARD'
-  duration    Int // minutos
+  difficulty  String   // 'EASY', 'MEDIUM', 'HARD'
+  duration    Int      // minutes
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  // Relaciones con Foreign Keys
+  // Relations
   company      Company?      @relation(fields: [companyId], references: [id], onDelete: SetNull)
   questions    Question[]
   testSessions TestSession[]
@@ -91,7 +92,7 @@ model Test {
 }
 
 // ============================================
-// NUEVOS MODELOS - Questions
+// MODELO - Question
 // ============================================
 model Question {
   id         String @id @default(uuid())
@@ -100,21 +101,21 @@ model Question {
   text       String @db.Text
   difficulty String // 'EASY', 'MEDIUM', 'HARD'
   points     Int    @default(1)
-  timeLimit  Int?   @map("time_limit") // segundos, opcional
+  timeLimit  Int?   @map("time_limit") // seconds, optional
   order      Int    @default(0)
 
-  // Para MCQ - almacenado como JSON
-  options       Json? // [{ id: "A", text: "Opción A" }, ...]
-  correctAnswer Json? @map("correct_answer") // ["A", "C"] para respuestas correctas
+  // For MCQ — stored as JSON
+  options       Json? // [{ id: "A", text: "Option A" }, ...]
+  correctAnswer Json? @map("correct_answer") // ["A", "C"] for correct answers
 
-  // Para Programming - almacenado como JSON
+  // For Programming — stored as JSON
   programmingData Json? @map("programming_data")
   // { starterCode: "...", testCases: [...], expectedOutput: "..." }
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // Relaciones con Foreign Keys
+  // Relations
   test    Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
   answers Answer[]
 
@@ -125,7 +126,7 @@ model Question {
 }
 
 // ============================================
-// NUEVOS MODELOS - Test Sessions
+// MODELO - TestSession
 // ============================================
 model TestSession {
   id        String   @id @default(uuid())
@@ -135,7 +136,7 @@ model TestSession {
   expiresAt DateTime @map("expires_at")
   isActive  Boolean  @default(true) @map("is_active")
 
-  // Relaciones con Foreign Keys
+  // Relations
   test       Test        @relation(fields: [testId], references: [id], onDelete: Cascade)
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   answers    Answer[]
@@ -149,17 +150,17 @@ model TestSession {
 }
 
 // ============================================
-// NUEVOS MODELOS - Answers
+// MODELO - Answer
 // ============================================
 model Answer {
   id         String @id @default(uuid())
   sessionId  String @map("session_id")
   questionId String @map("question_id")
 
-  // Para MCQ
+  // For MCQ
   selectedOption String? @map("selected_option") // "A", "B", "C", etc.
 
-  // Para Programming
+  // For Programming
   code     String? @db.Text
   language String?
 
@@ -167,7 +168,7 @@ model Answer {
   points     Int?
   answeredAt DateTime @default(now()) @map("answered_at")
 
-  // Relaciones con Foreign Keys
+  // Relations
   session  TestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   question Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
@@ -178,7 +179,7 @@ model Answer {
 }
 
 // ============================================
-// NUEVOS MODELOS - Submissions
+// MODELO - Submission
 // ============================================
 model Submission {
   id          String   @id @default(uuid())
@@ -187,10 +188,10 @@ model Submission {
   userId      String   @map("user_id")
   score       Float
   maxScore    Float    @map("max_score")
-  breakdown   Json // { correct: 10, incorrect: 2, total: 12 }
+  breakdown   Json     // { correct: 10, incorrect: 2, total: 12 }
   submittedAt DateTime @default(now()) @map("submitted_at")
 
-  // Relaciones con Foreign Keys
+  // Relations
   test    Test        @relation(fields: [testId], references: [id], onDelete: Cascade)
   session TestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -201,6 +202,9 @@ model Submission {
   @@map("submissions")
 }
 
+// ============================================
+// MODELO - Course
+// ============================================
 model Course {
   id              String   @id @default(uuid())
   title           String
@@ -216,6 +220,9 @@ model Course {
   @@map("courses")
 }
 
+// ============================================
+// MODELO - Enrollment
+// ============================================
 model Enrollment {
   id         String   @id @default(uuid())
   userId     String   @map("user_id")
@@ -229,4 +236,109 @@ model Enrollment {
   @@index([userId])
   @@index([courseId])
   @@map("enrollments")
+}
+
+// ============================================
+// Problem — a LeetCode-style coding problem
+// ============================================
+model Problem {
+  id              String   @id @default(uuid())
+  slug            String   @unique            // e.g. "two-sum"
+  title           String
+  description     String   @db.Text
+  difficulty      String                      // 'EASY' | 'MEDIUM' | 'HARD'
+  tags            String[]                    // e.g. ["Array", "Hash Table"]
+  constraints     String[] @db.Text           // list of constraint strings
+  isActive        Boolean  @default(true)     @map("is_active")
+  acceptedCount   Int      @default(0)        @map("accepted_count")
+  submissionCount Int      @default(0)        @map("submission_count")
+  createdAt       DateTime @default(now())    @map("created_at")
+  updatedAt       DateTime @updatedAt         @map("updated_at")
+
+  testCases          TestCase[]
+  starterCodes       StarterCode[]
+  problemSubmissions ProblemSubmission[]
+
+  @@index([difficulty])
+  @@index([isActive])
+  @@index([slug])
+  @@map("problems")
+}
+
+// ============================================
+// TestCase — input/output pairs for a problem
+// ============================================
+model TestCase {
+  id             String  @id @default(uuid())
+  problemId      String  @map("problem_id")
+  input          String  @db.Text
+  expectedOutput String  @db.Text             @map("expected_output")
+  explanation    String? @db.Text
+  isExample      Boolean @default(false)      @map("is_example") // shown in problem description
+  order          Int     @default(0)
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([problemId])
+  @@index([isExample])
+  @@map("test_cases")
+}
+
+// ============================================
+// StarterCode — per-language boilerplate
+// ============================================
+model StarterCode {
+  id        String @id @default(uuid())
+  problemId String @map("problem_id")
+  language  String // 'java' | 'typescript' | 'cpp'
+  code      String @db.Text
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([problemId, language])
+  @@map("starter_codes")
+}
+
+// ============================================
+// ProblemSubmission — one run or submit attempt
+// ============================================
+model ProblemSubmission {
+  id        String   @id @default(uuid())
+  problemId String   @map("problem_id")
+  userId    String   @map("user_id")
+  language  String                          // 'java' | 'typescript' | 'cpp'
+  code      String   @db.Text
+  mode      String                          // 'run' | 'submit'
+  status    String   @default("pending")    // 'pending' | 'running' | 'accepted' | 'wrong_answer' | 'time_limit_exceeded' | 'runtime_error' | 'compile_error'
+  runtimeMs Int?     @map("runtime_ms")
+  memoryMb  Float?   @map("memory_mb")
+  score     Float?                          // percentage of test cases passed (0–100)
+  createdAt DateTime @default(now())        @map("created_at")
+  updatedAt DateTime @updatedAt             @map("updated_at")
+
+  problem         Problem          @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  executionResult ExecutionResult?
+
+  @@index([problemId])
+  @@index([userId])
+  @@index([status])
+  @@index([language])
+  @@map("problem_submissions")
+}
+
+// ============================================
+// ExecutionResult — detailed per-test-case results
+// ============================================
+model ExecutionResult {
+  id                  String   @id @default(uuid())
+  problemSubmissionId String   @unique               @map("problem_submission_id")
+  compileError        String?  @db.Text              @map("compile_error")
+  testCaseResults     Json                           @map("test_case_results")
+  // JSON shape: Array<{ testCaseId, passed, input, expectedOutput, actualOutput, runtimeMs }>
+  createdAt           DateTime @default(now())       @map("created_at")
+
+  problemSubmission ProblemSubmission @relation(fields: [problemSubmissionId], references: [id], onDelete: Cascade)
+
+  @@map("execution_results")
 }
