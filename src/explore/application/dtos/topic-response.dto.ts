@@ -1,11 +1,11 @@
 export class TopicResponseDto {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  category: string;
-  difficulty: string;
+  id: string | undefined;
+  slug: string | undefined;
+  title: string | undefined;
+  description: string | undefined;
+  category: string | undefined;
+  difficulty: string | undefined;
   icon?: string | null;
-  totalProblems: number;
+  totalProblems: number | undefined;
   progress?: number;
 }
