@@ -6,9 +6,7 @@ import { CreateContestUseCase } from '../application/use-cases/create-contest.us
 import { RegisterForContestUseCase } from '../application/use-cases/register-for-contest.use-case';
 import { GetContestStatsUseCase } from '../application/use-cases/get-contest-stats.use-case';
 import { PrismaContestRepository } from './persistence/prisma-contest.repository';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../share/infrastructure/prisma-client';
 const repository = new PrismaContestRepository(prisma);
 
 const getContestsUseCase = new GetContestsUseCase(repository);
