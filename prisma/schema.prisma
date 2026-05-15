@@ -20,12 +20,11 @@ model User {
   password  String
   createdAt DateTime @default(now()) @map("created_at")
 
-  // Relations
-  testSessions       TestSession[]
-  submissions        Submission[]
-  refreshTokens      RefreshToken[]
-  enrollments        Enrollment[]
-  problemSubmissions ProblemSubmission[]
+  // Relaciones
+  testSessions TestSession[]
+  submissions  Submission[]
+  refreshTokens RefreshToken[]
+  enrollments  Enrollment[]
 
   @@map("users")
 }
@@ -236,6 +235,67 @@ model Enrollment {
   @@index([userId])
   @@index([courseId])
   @@map("enrollments")
+}
+
+model Problem {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  difficulty  String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  contestProblems ContestProblem[]
+
+  @@map("problems")
+}
+
+model Contest {
+  id            String   @id @default(uuid())
+  title         String
+  description   String   @db.Text
+  difficulty    String
+  status        String   @default("upcoming")
+  prize         String?
+  startTime     DateTime @map("start_time")
+  endTime       DateTime @map("end_time")
+  durationMins  Int      @map("duration_mins")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  problems      ContestProblem[]
+  registrations ContestRegistration[]
+
+  @@index([status])
+  @@index([startTime])
+  @@map("contests")
+}
+
+model ContestProblem {
+  id        String @id @default(uuid())
+  contestId String @map("contest_id")
+  problemId String @map("problem_id")
+  order     Int    @default(0)
+  points    Int    @default(100)
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([contestId, problemId])
+  @@map("contest_problems")
+}
+
+model ContestRegistration {
+  id        String   @id @default(uuid())
+  contestId String   @map("contest_id")
+  userId    String   @map("user_id")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([contestId, userId])
+  @@map("contest_registrations")
 }
 
 // ============================================
