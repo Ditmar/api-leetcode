@@ -37,4 +37,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ditmar/api-leetcode:${{ env.VERSION }}
+          tags: ditmar/api-leetcode:${{ env.VERSION }}-build.${{ github.run_id }},ditmar/api-leetcode:latest
