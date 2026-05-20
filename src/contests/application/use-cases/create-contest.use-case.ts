@@ -34,6 +34,6 @@ export class CreateContestUseCase {
       []
     );
 
-    return this.contestRepository.create(contest);
+    return this.contestRepository.create(contest, dto.problemIds);
   }
 }

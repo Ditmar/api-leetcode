@@ -60,7 +60,7 @@ export class PrismaContestRepository implements ContestRepository {
     return this.mapToDomain(contest);
   }
 
-  async create(contest: Contest): Promise<Contest> {
+  async create(contest: Contest, problemIds?: string[]): Promise<Contest> {
     const created = await this.prisma.contest.create({
       data: {
         title: contest.getTitle(),
@@ -72,6 +72,16 @@ export class PrismaContestRepository implements ContestRepository {
         endTime: contest.getEndTime(),
         durationMins: contest.getDurationMins(),
         isActive: contest.isActiveContest(),
+        problems:
+          problemIds && problemIds.length
+            ? {
+                create: problemIds.map(problemId => ({
+                  problem: {
+                    connect: { id: problemId },
+                  },
+                })),
+              }
+            : undefined,
       },
       include: {
         problems: {
@@ -121,6 +131,14 @@ export class PrismaContestRepository implements ContestRepository {
       problemId: p.problemId,
       order: p.order,
       points: p.points,
+      problem: p.problem
+        ? {
+            id: p.problem.id,
+            title: p.problem.title,
+            description: p.problem.description,
+            difficulty: p.problem.difficulty,
+          }
+        : undefined,
     }));
 
     return Contest.create(

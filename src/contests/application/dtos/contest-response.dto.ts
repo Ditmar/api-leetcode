@@ -3,6 +3,12 @@ export interface ContestProblemResponseDTO {
   problemId: string;
   order: number;
   points: number;
+  problem?: {
+    id: string;
+    title: string;
+    description: string;
+    difficulty: string;
+  };
 }
 
 export interface ContestResponseDTO {

@@ -6,4 +6,5 @@ export interface CreateContestDTO {
   endTime: string;
   durationMins: number;
   prize?: string;
+  problemIds?: string[];
 }

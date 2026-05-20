@@ -16,6 +16,6 @@ export interface ContestStats {
 export abstract class ContestRepository {
   abstract getAll(params: GetContestsParams): Promise<Contest[]>;
   abstract getById(id: string): Promise<Contest | null>;
-  abstract create(contest: Contest): Promise<Contest>;
+  abstract create(contest: Contest, problemIds?: string[]): Promise<Contest>;
   abstract getStats(): Promise<ContestStats>;
 }

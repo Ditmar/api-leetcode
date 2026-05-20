@@ -6,6 +6,7 @@ import { CreateContestUseCase } from '../application/use-cases/create-contest.us
 import { RegisterForContestUseCase } from '../application/use-cases/register-for-contest.use-case';
 import { GetContestStatsUseCase } from '../application/use-cases/get-contest-stats.use-case';
 import { PrismaContestRepository } from './persistence/prisma-contest.repository';
+import { AuthMiddleware } from '../../auth/infrastructure/middleware/auth-middleware';
 import { prisma } from '../../share/infrastructure/prisma-client';
 const repository = new PrismaContestRepository(prisma);
 
@@ -31,9 +32,11 @@ const router = Router();
 router.get('/stats', (req, res) => controller.getContestStats(req, res));
 router.get('/:id', (req, res) => controller.getContestById(req, res));
 router.get('/', (req, res) => controller.getContests(req, res));
-router.post('/:id/register', (req, res) =>
+router.post('/:id/register', AuthMiddleware.validateToken, (req, res) =>
   controller.registerForContest(req, res)
 );
-router.post('/', (req, res) => controller.createContest(req, res));
+router.post('/', AuthMiddleware.validateToken, (req, res) =>
+  controller.createContest(req, res)
+);
 
 export { router as contestRoutes };

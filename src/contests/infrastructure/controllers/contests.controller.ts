@@ -101,6 +101,7 @@ export class ContestsController {
         endTime,
         durationMins,
         prize,
+        problemIds,
       } = req.body;
 
       const contest = await this.createContestUseCase.execute({
@@ -111,6 +112,7 @@ export class ContestsController {
         endTime,
         durationMins,
         prize,
+        problemIds,
       });
 
       const dto = this.mapToResponseDTO(contest);
@@ -187,6 +189,12 @@ export class ContestsController {
         problemId: p.problemId,
         order: p.order,
         points: p.points,
+        problem: p.problem && {
+          id: p.problem.id,
+          title: p.problem.title,
+          description: p.problem.description,
+          difficulty: p.problem.difficulty,
+        },
       })),
     };
   }
