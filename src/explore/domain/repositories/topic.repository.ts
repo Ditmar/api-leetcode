@@ -25,6 +25,4 @@ export abstract class TopicRepository {
   abstract getCategories(): Promise<string[]>;
 
   abstract getStats(userId: string): Promise<ExploreStats>;
-
-  abstract updateProgress(userId: string, problemId: string): Promise<void>;
 }

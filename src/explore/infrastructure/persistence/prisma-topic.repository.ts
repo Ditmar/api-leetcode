@@ -51,36 +51,45 @@ export class PrismaTopicRepository implements TopicRepository {
     );
   }
 
-  async findBySlug(slug: string, userId?: string) {
-    return this.prisma.topic.findUnique({
+  async findBySlug(slug: string, userId?: string): Promise<TopicEntity | null> {
+    const topic = await this.prisma.topic.findUnique({
       where: { slug },
       include: {
         topicProblems: {
-          include: {
-            problem: true,
-          },
-          orderBy: {
-            order: 'asc',
-          },
+          include: { problem: true },
+          orderBy: { order: 'asc' },
         },
-        userProgress: userId
-          ? {
-              where: { userId },
-            }
-          : false,
+        userProgress: userId ? { where: { userId } } : false,
       },
     });
+
+    if (!topic) return null;
+
+    return new TopicEntity(
+      topic.id,
+      topic.slug,
+      topic.title,
+      topic.description,
+      topic.category,
+      topic.difficulty,
+      topic.icon,
+      topic.totalProblems,
+      topic.userProgress?.[0]?.progress ?? 0
+    );
   }
 
   async getCategories(): Promise<string[]> {
     const categories = await this.prisma.topic.findMany({
+      where: {
+        isActive: true,
+      },
       distinct: ['category'],
       select: {
         category: true,
       },
     });
 
-    return categories.map(c => c.category);
+    return categories.map(({ category }) => category);
   }
 
   async getStats(userId: string): Promise<ExploreStats> {
@@ -113,41 +122,5 @@ export class PrismaTopicRepository implements TopicRepository {
       solvedProblems,
       overallProgress,
     };
-  }
-
-  async updateProgress(userId: string, problemId: string): Promise<void> {
-    const topicProblems = await this.prisma.topicProblem.findMany({
-      where: { problemId },
-    });
-
-    for (const tp of topicProblems) {
-      const solvedCount = await this.prisma.answer.count({
-        where: {
-          isCorrect: true,
-          session: {
-            userId,
-          },
-        },
-      });
-
-      await this.prisma.topicProgress.upsert({
-        where: {
-          userId_topicId: {
-            userId,
-            topicId: tp.topicId,
-          },
-        },
-        update: {
-          progress: solvedCount,
-          lastActiveAt: new Date(),
-        },
-        create: {
-          userId,
-          topicId: tp.topicId,
-          progress: solvedCount,
-          lastActiveAt: new Date(),
-        },
-      });
-    }
   }
 }

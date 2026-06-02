@@ -14,41 +14,94 @@ export class ExploreController {
   ) {}
 
   getTopics = async (req: Request, res: Response) => {
-    const { category, difficulty } = req.query;
+    try {
+      const { category, difficulty, page, limit } = req.query;
 
-    const topics = await this.getTopicsUseCase.execute({
-      category: category as string,
-      difficulty: difficulty as string,
-    });
+      const topics = await this.getTopicsUseCase.execute({
+        category: category as string,
+        difficulty: difficulty as string,
+        page: page ? Number(page) : 1,
+        limit: limit ? Number(limit) : 10,
+      });
 
-    return res.json(topics);
+      return res.json(topics);
+    } catch (error) {
+      console.error('[ExploreController:getTopics]', error);
+
+      return res.status(500).json({
+        message: 'Internal server error',
+      });
+    }
   };
 
   getTopicBySlug = async (req: Request, res: Response) => {
-    const slug = req.params.slug as string;
+    try {
+      const { slug } = req.params;
 
-    const topic = await this.getTopicBySlugUseCase.execute(slug);
+      if (!slug) {
+        return res.status(404).json({
+          message: 'slug not found',
+        });
+      }
 
-    if (!topic) {
-      return res.status(404).json({
-        message: 'Topic not found',
+      const topic = await this.getTopicBySlugUseCase.execute(slug);
+
+      if (!topic) {
+        return res.status(404).json({
+          message: 'Topic not found',
+        });
+      }
+
+      return res.json(topic);
+    } catch (error) {
+      console.error('[ExploreController:getTopicBySlug]', error);
+
+      return res.status(500).json({
+        message: 'Internal server error',
       });
     }
-
-    return res.json(topic);
   };
 
   getCategories = async (_req: Request, res: Response) => {
-    const categories = await this.getCategoriesUseCase.execute();
+    try {
+      const categories = await this.getCategoriesUseCase.execute();
 
-    return res.json(categories);
+      return res.json(categories);
+    } catch (error) {
+      console.error('[ExploreController:getCategories]', error);
+
+      return res.status(500).json({
+        message: 'Internal server error',
+      });
+    }
   };
 
   getStats = async (req: Request, res: Response) => {
-    const userId = (req as any).user?.id;
+    try {
+      const userId = (
+        req as Request & {
+          user?: {
+            id: string;
+            email: string;
+          };
+        }
+      ).user?.id;
 
-    const stats = await this.getExploreStatsUseCase.execute(userId);
+      if (!userId) {
+        return res.status(401).json({
+          message: 'Usuario no autenticado',
+        });
+      }
 
-    return res.json(stats);
+      const stats = await this.getExploreStatsUseCase.execute(userId);
+
+      return res.json(stats);
+    } catch (error) {
+      console.error('[ExploreController:getStats]', error);
+
+      return res.status(500).json({
+        message: 'Internal server error',
+      });
+    }
   };
 }

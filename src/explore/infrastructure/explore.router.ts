@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
 
 import { PrismaTopicRepository } from './persistence/prisma-topic.repository';
 
@@ -11,26 +10,43 @@ import { GetExploreStatsUseCase } from '../application/use-cases/get-explore-sta
 import { ExploreController } from './controllers/explore.controller';
 
 import { authMiddleware } from '../../share/infrastructure/middleware/auth.middleware';
+import { prisma as getPrismaClient } from '../../share/infrastructure/prisma-client';
 
 const exploreRouter = Router();
 
-const prisma = new PrismaClient();
+let cachedController: ExploreController | null = null;
 
-const repository = new PrismaTopicRepository(prisma);
+const getController = (): ExploreController => {
+  if (cachedController) {
+    return cachedController;
+  }
 
-const controller = new ExploreController(
-  new GetTopicsUseCase(repository),
-  new GetTopicBySlugUseCase(repository),
-  new GetCategoriesUseCase(repository),
-  new GetExploreStatsUseCase(repository)
+  const prisma = getPrismaClient;
+
+  const repository = new PrismaTopicRepository(prisma);
+
+  cachedController = new ExploreController(
+    new GetTopicsUseCase(repository),
+    new GetTopicBySlugUseCase(repository),
+    new GetCategoriesUseCase(repository),
+    new GetExploreStatsUseCase(repository)
+  );
+
+  return cachedController;
+};
+
+exploreRouter.get('/topics', (req, res) => getController().getTopics(req, res));
+
+exploreRouter.get('/topics/:slug', (req, res) =>
+  getController().getTopicBySlug(req, res)
 );
 
-exploreRouter.get('/topics', controller.getTopics);
+exploreRouter.get('/categories', (req, res) =>
+  getController().getCategories(req, res)
+);
 
-exploreRouter.get('/topics/:slug', controller.getTopicBySlug);
-
-exploreRouter.get('/categories', controller.getCategories);
-
-exploreRouter.get('/stats', authMiddleware, controller.getStats);
+exploreRouter.get('/stats', authMiddleware, (req, res) =>
+  getController().getStats(req, res)
+);
 
 export { exploreRouter };

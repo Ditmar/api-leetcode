@@ -1,3 +1,10 @@
+export interface TopicProblemEntity {
+  id: string;
+  title: string;
+  difficulty: string;
+  isCompleted?: boolean;
+}
+
 export class TopicEntity {
   constructor(
     public readonly id: string,
@@ -8,6 +15,8 @@ export class TopicEntity {
     public readonly difficulty: string,
     public readonly icon: string | null,
     public readonly totalProblems: number,
-    public readonly progress?: number
+    public readonly progress?: number,
+
+    public readonly problems?: TopicProblemEntity[]
   ) {}
 }
