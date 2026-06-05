@@ -1,27 +1,4 @@
 -- CreateTable
-CREATE TABLE "courses" (
-    "id" TEXT NOT NULL,
-    "title" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
-    "number_of_lessons" INTEGER NOT NULL,
-    "is_active" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "courses_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "enrollments" (
-    "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
-    "course_id" TEXT NOT NULL,
-    "enrolled_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "enrollments_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "problems" (
     "id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -92,18 +69,6 @@ CREATE TABLE "execution_results" (
 );
 
 -- CreateIndex
-CREATE INDEX "courses_is_active_idx" ON "courses"("is_active");
-
--- CreateIndex
-CREATE INDEX "enrollments_user_id_idx" ON "enrollments"("user_id");
-
--- CreateIndex
-CREATE INDEX "enrollments_course_id_idx" ON "enrollments"("course_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "enrollments_user_id_course_id_key" ON "enrollments"("user_id", "course_id");
-
--- CreateIndex
 CREATE UNIQUE INDEX "problems_slug_key" ON "problems"("slug");
 
 -- CreateIndex
@@ -138,12 +103,6 @@ CREATE INDEX "problem_submissions_language_idx" ON "problem_submissions"("langua
 
 -- CreateIndex
 CREATE UNIQUE INDEX "execution_results_problem_submission_id_key" ON "execution_results"("problem_submission_id");
-
--- AddForeignKey
-ALTER TABLE "enrollments" ADD CONSTRAINT "enrollments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "enrollments" ADD CONSTRAINT "enrollments_course_id_fkey" FOREIGN KEY ("course_id") REFERENCES "courses"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "test_cases" ADD CONSTRAINT "test_cases_problem_id_fkey" FOREIGN KEY ("problem_id") REFERENCES "problems"("id") ON DELETE CASCADE ON UPDATE CASCADE;
