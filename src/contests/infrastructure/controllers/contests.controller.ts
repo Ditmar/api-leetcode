@@ -84,9 +84,25 @@ export class ContestsController {
         data: dto,
       });
     } catch (error) {
-      res.status(400).json({
+      if (error instanceof Error && error.name === 'ContestValidationError') {
+        res.status(400).json({
+          success: false,
+          error: error.message,
+        });
+        return;
+      }
+
+      if (error instanceof Error && error.name === 'ContestNotFoundError') {
+        res.status(404).json({
+          success: false,
+          error: error.message,
+        });
+        return;
+      }
+
+      res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Bad request',
+        error: error instanceof Error ? error.message : 'Internal server error',
       });
     }
   }
@@ -121,9 +137,25 @@ export class ContestsController {
         data: dto,
       });
     } catch (error) {
-      res.status(400).json({
+      if (error instanceof Error && error.name === 'ContestValidationError') {
+        res.status(400).json({
+          success: false,
+          error: error.message,
+        });
+        return;
+      }
+
+      if (error instanceof Error && error.name === 'ContestNotFoundError') {
+        res.status(404).json({
+          success: false,
+          error: error.message,
+        });
+        return;
+      }
+
+      res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Bad request',
+        error: error instanceof Error ? error.message : 'Internal server error',
       });
     }
   }
@@ -152,20 +184,17 @@ export class ContestsController {
         data: result,
       });
     } catch (error) {
-      const errorMsg =
-        error instanceof Error ? error.message : 'Internal server error';
-
-      if (errorMsg === 'Contest not found') {
+      if (error instanceof Error && error.name === 'ContestNotFoundError') {
         res.status(404).json({
           success: false,
-          error: errorMsg,
+          error: error.message,
         });
         return;
       }
 
       res.status(500).json({
         success: false,
-        error: errorMsg,
+        error: error instanceof Error ? error.message : 'Internal server error',
       });
     }
   }

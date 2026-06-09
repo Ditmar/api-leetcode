@@ -1,5 +1,14 @@
 import { ContestStatus } from '../value-objects/contest-status.vo';
 
+const MAX_CONTEST_DURATION_MINS = 10080;
+
+class ContestValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ContestValidationError';
+  }
+}
+
 export interface ContestProblem {
   id: string;
   problemId: string;
@@ -101,8 +110,10 @@ export class Contest {
       throw new Error('End time must be after start time');
     }
 
-    if (durationMins <= 0) {
-      throw new Error('Duration must be positive');
+    if (durationMins <= 0 || durationMins > MAX_CONTEST_DURATION_MINS) {
+      throw new ContestValidationError(
+        'Duration must be between 1 and 10080 minutes'
+      );
     }
 
     return new Contest(

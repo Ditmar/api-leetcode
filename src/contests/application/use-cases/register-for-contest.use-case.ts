@@ -1,6 +1,13 @@
 import { ContestRepository } from '../../domain/repositories/contest.repository';
 import { PrismaClient } from '@prisma/client';
 
+class ContestNotFoundError extends Error {
+  constructor(message = 'Contest not found') {
+    super(message);
+    this.name = 'ContestNotFoundError';
+  }
+}
+
 export class RegisterForContestUseCase {
   constructor(
     private contestRepository: ContestRepository,
@@ -13,7 +20,7 @@ export class RegisterForContestUseCase {
   ): Promise<{ registered: boolean }> {
     const contest = await this.contestRepository.getById(contestId);
     if (!contest) {
-      throw new Error('Contest not found');
+      throw new ContestNotFoundError('Contest not found');
     }
 
     const existing = await this.prisma.contestRegistration.findUnique({
