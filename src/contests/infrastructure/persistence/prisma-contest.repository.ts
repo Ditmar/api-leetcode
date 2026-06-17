@@ -3,7 +3,7 @@ import {
   Prisma,
   Contest as PrismaContest,
   ContestProblem as PrismaContestProblem,
-  Problem as PrismaProblem,
+  ContestProblemDef as PrismaProblem,
 } from '@prisma/client';
 import {
   Contest,

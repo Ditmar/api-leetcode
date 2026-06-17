@@ -20,11 +20,13 @@ model User {
   password  String
   createdAt DateTime @default(now()) @map("created_at")
 
-  // Relaciones
-  testSessions TestSession[]
-  submissions  Submission[]
-  refreshTokens RefreshToken[]
-  enrollments  Enrollment[]
+  // Relations
+  testSessions       TestSession[]
+  submissions        Submission[]
+  refreshTokens      RefreshToken[]
+  enrollments        Enrollment[]
+  contestRegistrations ContestRegistration[]
+  problemSubmissions ProblemSubmission[]
 
   @@map("users")
 }
@@ -237,7 +239,10 @@ model Enrollment {
   @@map("enrollments")
 }
 
-model Problem {
+// ============================================
+// MODELO - Contest & Related (from your feature)
+// ============================================
+model ContestProblemDef {
   id          String   @id @default(uuid())
   title       String
   description String   @db.Text
@@ -246,7 +251,7 @@ model Problem {
 
   contestProblems ContestProblem[]
 
-  @@map("problems")
+  @@map("contest_problem_defs")
 }
 
 model Contest {
@@ -278,8 +283,8 @@ model ContestProblem {
   order     Int    @default(0)
   points    Int    @default(100)
 
-  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
-  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  contest Contest              @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem ContestProblemDef    @relation(fields: [problemId], references: [id], onDelete: Cascade)
 
   @@unique([contestId, problemId])
   @@map("contest_problems")
