@@ -9,6 +9,7 @@ import { authRoutes } from './auth/infrastructure/routes/auth-routes';
 import { userRoutes } from './user/infrastructure/routes/user-routes';
 import { testRoutes } from './tests/infraestructure/routes/test-routes';
 import { courseRoutes } from './course/infrastructure/routes/course-routes';
+import { contestRoutes } from './contests/infrastructure/contests.router';
 
 const app: Application = express();
 
@@ -41,6 +42,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', AuthMiddleware.validateToken, userRoutes);
 app.use('/api/tests', testRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/contests', contestRoutes);
 
 app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
