@@ -38,9 +38,9 @@ export class ExploreController {
     try {
       const { slug } = req.params;
 
-      if (!slug) {
-        return res.status(404).json({
-          message: 'slug not found',
+      if (!slug || slug.trim() === '') {
+        return res.status(400).json({
+          message: 'The "slug" parameter is required.',
         });
       }
 
@@ -48,16 +48,16 @@ export class ExploreController {
 
       if (!topic) {
         return res.status(404).json({
-          message: 'Topic not found',
+          message: 'Topic not found.',
         });
       }
 
-      return res.json(topic);
+      return res.status(200).json(topic);
     } catch (error) {
       console.error('[ExploreController:getTopicBySlug]', error);
 
       return res.status(500).json({
-        message: 'Internal server error',
+        message: 'Internal server error.',
       });
     }
   };
@@ -78,22 +78,22 @@ export class ExploreController {
 
   getStats = async (req: Request, res: Response) => {
     try {
-      const userId = (
-        req as Request & {
-          user?: {
-            id: string;
-            email: string;
-          };
-        }
-      ).user?.id;
+      const authRequest = req as Request & {
+        user?: {
+          id: string;
+          email: string;
+        };
+      };
 
-      if (!userId) {
+      if (!authRequest.user) {
         return res.status(401).json({
-          message: 'Usuario no autenticado',
+          message: 'Unauthenticated user',
         });
       }
 
-      const stats = await this.getExploreStatsUseCase.execute(userId);
+      const stats = await this.getExploreStatsUseCase.execute(
+        authRequest.user.id
+      );
 
       return res.json(stats);
     } catch (error) {
