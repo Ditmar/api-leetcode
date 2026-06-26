@@ -27,7 +27,6 @@ model User {
   enrollments        Enrollment[]
   contestRegistrations ContestRegistration[]
   problemSubmissions ProblemSubmission[]
-  topicProgress TopicProgress[]
 
   @@map("users")
 }
@@ -325,8 +324,6 @@ model Problem {
   starterCodes       StarterCode[]
   problemSubmissions ProblemSubmission[]
 
-  topicProblems      TopicProblem[]
-
   @@index([difficulty])
   @@index([isActive])
   @@index([slug])
@@ -409,53 +406,4 @@ model ExecutionResult {
   problemSubmission ProblemSubmission @relation(fields: [problemSubmissionId], references: [id], onDelete: Cascade)
 
   @@map("execution_results")
-}
-
-
-model Topic {
-  id             String   @id @default(uuid())
-  slug           String   @unique
-  title          String
-  description    String   @db.Text
-  category       String
-  difficulty     String
-  icon           String?
-  totalProblems  Int      @default(0) @map("total_problems")
-  isActive       Boolean  @default(true) @map("is_active")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  topicProblems TopicProblem[]
-  userProgress  TopicProgress[]
-
-  @@index([category])
-  @@index([difficulty])
-  @@map("topics")
-}
-
-model TopicProblem {
-  id        String @id @default(uuid())
-  topicId   String @map("topic_id")
-  problemId String @map("problem_id")
-  order     Int    @default(0)
-
-  topic   Topic   @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
-
-  @@unique([topicId, problemId])
-  @@map("topic_problems")
-}
-
-model TopicProgress {
-  id           String    @id @default(uuid())
-  userId       String    @map("user_id")
-  topicId      String    @map("topic_id")
-  progress     Int       @default(0)
-  lastActiveAt DateTime? @map("last_active_at")
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, topicId])
-  @@map("topic_progress")
 }
