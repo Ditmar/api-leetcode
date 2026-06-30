@@ -73,7 +73,7 @@ export class ProblemsController {
 
   async stats(req: Request, res: Response): Promise<void> {
     try {
-      const userId = (req as any).user?.id;
+      const userId = (req as any).userId;
       if (!userId) {
         res.status(401).json({ message: 'Unauthorized' });
         return;
