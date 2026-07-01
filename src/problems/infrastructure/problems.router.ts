@@ -20,7 +20,8 @@ const controller = new ProblemsController(
   new GetTagsUseCase(repository),
   new GetStatsUseCase(repository),
   new CreateProblemUseCase(repository),
-  new UpdateProblemUseCase(repository)
+  new UpdateProblemUseCase(repository),
+  repository
 );
 
 const problemsRouter = Router();

@@ -1,3 +1,6 @@
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { CreateProblemDto } from '../../application/dtos/create-problem.dto';
 import type { Request, Response } from 'express';
 import type { GetProblemsUseCase } from '../../application/use-cases/get-problems.use-case';
 import type { GetProblemByIdUseCase } from '../../application/use-cases/get-problem-by-id.use-case';
@@ -6,6 +9,7 @@ import type { GetTagsUseCase } from '../../application/use-cases/get-tags.use-ca
 import type { GetStatsUseCase } from '../../application/use-cases/get-stats.use-case';
 import type { CreateProblemUseCase } from '../../application/use-cases/create-problem.use-case';
 import type { UpdateProblemUseCase } from '../../application/use-cases/update-problem.use-case';
+import type { ProblemRepository } from '../../domain/repositories/problem.repository';
 
 export class ProblemsController {
   constructor(
@@ -15,7 +19,8 @@ export class ProblemsController {
     private readonly getTags: GetTagsUseCase,
     private readonly getStats: GetStatsUseCase,
     private readonly createProblem: CreateProblemUseCase,
-    private readonly updateProblem: UpdateProblemUseCase
+    private readonly updateProblem: UpdateProblemUseCase,
+    private readonly problemRepository: ProblemRepository
   ) {}
 
   async list(req: Request, res: Response): Promise<void> {
@@ -87,7 +92,21 @@ export class ProblemsController {
 
   async create(req: Request, res: Response): Promise<void> {
     try {
-      const result = await this.createProblem.execute(req.body);
+      const dto = plainToInstance(CreateProblemDto, req.body);
+      const errors = await validate(dto);
+
+      if (errors.length > 0) {
+        res.status(400).json({
+          message: 'Validation failed',
+          errors: errors.map(e => ({
+            field: e.property,
+            constraints: e.constraints,
+          })),
+        });
+        return;
+      }
+
+      const result = await this.createProblem.execute(dto);
       res.status(201).json(result);
     } catch (error) {
       if (error instanceof Error) {
@@ -120,6 +139,7 @@ export class ProblemsController {
         res.status(404).json({ message: `Problem with id ${id} not found` });
         return;
       }
+      await this.problemRepository.softDelete(id);
       res.status(204).send();
     } catch (error) {
       if (error instanceof Error && error.message.includes('not found')) {

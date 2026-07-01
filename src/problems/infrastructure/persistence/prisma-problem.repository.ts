@@ -183,11 +183,15 @@ export class PrismaProblemRepository extends ProblemRepository {
     const record = await this.prisma.problem.update({
       where: { id },
       data: {
-        ...(data.title && { title: data.title }),
-        ...(data.description && { description: data.description }),
-        ...(data.difficulty && { difficulty: data.difficulty }),
-        ...(data.tags && { tags: data.tags }),
-        ...(data.constraints && { constraints: data.constraints }),
+        ...(data.title !== undefined && { title: data.title }),
+        ...(data.description !== undefined && {
+          description: data.description,
+        }),
+        ...(data.difficulty !== undefined && { difficulty: data.difficulty }),
+        ...(data.tags !== undefined && { tags: data.tags }),
+        ...(data.constraints !== undefined && {
+          constraints: data.constraints,
+        }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
       },
       include: {
