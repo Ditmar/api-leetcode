@@ -33,6 +33,36 @@ problemsRouter.get('/stats', AuthMiddleware.validateToken, (req, res) =>
 );
 problemsRouter.get('/:id', (req, res) => controller.getById(req, res));
 problemsRouter.get('/slug/:slug', (req, res) => controller.getBySlug(req, res));
+/**
+ * POST /problems
+ * Creates a new coding problem. Requires a valid JWT.
+ *
+ * Expected request body (CreateProblemDto):
+ * {
+ *   slug: string;                 // unique, lowercase, hyphen-separated (e.g. "two-sum")
+ *   title: string;
+ *   description: string;
+ *   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+ *   tags: string[];
+ *   constraints: string[];
+ *   testCases: {
+ *     input: string;
+ *     expectedOutput: string;
+ *     explanation?: string;
+ *     isExample: boolean;
+ *     order: number;
+ *   }[];                          // must be a non-empty array
+ *   starterCodes: {
+ *     language: string;
+ *     code: string;
+ *   }[];                          // must be a non-empty array
+ * }
+ *
+ * Responses:
+ *   201 — Created, returns ProblemDetailDto
+ *   400 — Validation failed, returns { message, errors: [{ field, constraints }] }
+ *   401 — Missing/invalid JWT
+ */
 problemsRouter.post('/', AuthMiddleware.validateToken, (req, res) =>
   controller.create(req, res)
 );

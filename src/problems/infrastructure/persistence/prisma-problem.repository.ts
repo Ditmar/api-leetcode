@@ -49,7 +49,14 @@ export class PrismaProblemRepository extends ProblemRepository {
   async findMany(
     filters: ProblemFilters
   ): Promise<{ problems: Problem[]; total: number }> {
-    const { search, difficulty, tag, page, pageSize } = filters;
+    const { search, difficulty, tag } = filters;
+
+    const page =
+      Number.isInteger(filters.page) && filters.page > 0 ? filters.page : 1;
+    const pageSize =
+      Number.isInteger(filters.pageSize) && filters.pageSize > 0
+        ? Math.min(filters.pageSize, 100)
+        : 20;
 
     const where: any = { isActive: true };
 
@@ -140,43 +147,50 @@ export class PrismaProblemRepository extends ProblemRepository {
   }
 
   async save(problem: Problem): Promise<Problem> {
-    const record = await this.prisma.problem.create({
-      data: {
-        id: problem.id,
-        slug: problem.slug,
-        title: problem.title,
-        description: problem.description,
-        difficulty: problem.difficulty,
-        tags: problem.tags,
-        constraints: problem.constraints,
-        isActive: problem.isActive,
-        acceptedCount: problem.acceptedCount,
-        submissionCount: problem.submissionCount,
-        testCases: {
-          create: problem.testCases.map(tc => ({
-            id: tc.id,
-            input: tc.input,
-            expectedOutput: tc.expectedOutput,
-            explanation: tc.explanation,
-            isExample: tc.isExample,
-            order: tc.order,
-          })),
+    try {
+      const record = await this.prisma.problem.create({
+        data: {
+          id: problem.id,
+          slug: problem.slug,
+          title: problem.title,
+          description: problem.description,
+          difficulty: problem.difficulty,
+          tags: problem.tags,
+          constraints: problem.constraints,
+          isActive: problem.isActive,
+          acceptedCount: problem.acceptedCount,
+          submissionCount: problem.submissionCount,
+          testCases: {
+            create: problem.testCases.map(tc => ({
+              id: tc.id,
+              input: tc.input,
+              expectedOutput: tc.expectedOutput,
+              explanation: tc.explanation,
+              isExample: tc.isExample,
+              order: tc.order,
+            })),
+          },
+          starterCodes: {
+            create: problem.starterCodes.map(sc => ({
+              id: sc.id,
+              language: sc.language,
+              code: sc.code,
+            })),
+          },
         },
-        starterCodes: {
-          create: problem.starterCodes.map(sc => ({
-            id: sc.id,
-            language: sc.language,
-            code: sc.code,
-          })),
+        include: {
+          testCases: true,
+          starterCodes: true,
         },
-      },
-      include: {
-        testCases: true,
-        starterCodes: true,
-      },
-    });
+      });
 
-    return this.mapToDomain(record);
+      return this.mapToDomain(record);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to save problem: ${error.message}`);
+      }
+      throw new Error('Failed to save problem: unknown error');
+    }
   }
 
   async update(id: string, data: Partial<Problem>): Promise<Problem> {

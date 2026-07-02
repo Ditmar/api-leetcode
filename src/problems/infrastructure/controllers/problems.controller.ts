@@ -26,6 +26,17 @@ export class ProblemsController {
   async list(req: Request, res: Response): Promise<void> {
     try {
       const { search, difficulty, tag, page, pageSize } = req.query;
+
+      if (
+        difficulty &&
+        !['EASY', 'MEDIUM', 'HARD'].includes(difficulty as string)
+      ) {
+        res.status(400).json({
+          message: `Invalid difficulty "${difficulty}". Must be EASY, MEDIUM or HARD`,
+        });
+        return;
+      }
+
       const result = await this.getProblems.execute({
         search: search as string | undefined,
         difficulty: difficulty as 'EASY' | 'MEDIUM' | 'HARD' | undefined,
@@ -34,7 +45,13 @@ export class ProblemsController {
         pageSize: pageSize ? parseInt(pageSize as string) : undefined,
       });
       res.json(result);
-    } catch {
+    } catch (error) {
+      if (error instanceof Error) {
+        res
+          .status(500)
+          .json({ message: `Failed to list problems: ${error.message}` });
+        return;
+      }
       res.status(500).json({ message: 'Internal server error' });
     }
   }
@@ -96,12 +113,27 @@ export class ProblemsController {
       const errors = await validate(dto);
 
       if (errors.length > 0) {
+        const flattenErrors = (
+          errs: typeof errors,
+          parentPath = ''
+        ): { field: string; constraints: Record<string, string> }[] => {
+          return errs.flatMap(e => {
+            const path = parentPath
+              ? `${parentPath}.${e.property}`
+              : e.property;
+            const own = e.constraints
+              ? [{ field: path, constraints: e.constraints }]
+              : [];
+            const nested = e.children?.length
+              ? flattenErrors(e.children, path)
+              : [];
+            return [...own, ...nested];
+          });
+        };
+
         res.status(400).json({
           message: 'Validation failed',
-          errors: errors.map(e => ({
-            field: e.property,
-            constraints: e.constraints,
-          })),
+          errors: flattenErrors(errors),
         });
         return;
       }

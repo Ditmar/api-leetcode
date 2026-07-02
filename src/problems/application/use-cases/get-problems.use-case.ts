@@ -13,8 +13,14 @@ export class GetProblemsUseCase {
   constructor(private readonly problemRepository: ProblemRepository) {}
 
   async execute(dto: GetProblemsDto): Promise<PaginatedProblemsDto> {
-    const page = dto.page ?? 1;
-    const pageSize = Math.min(dto.pageSize ?? 20, 100);
+    const page =
+      Number.isInteger(dto.page) && (dto.page as number) > 0
+        ? (dto.page as number)
+        : 1;
+    const pageSize =
+      Number.isInteger(dto.pageSize) && (dto.pageSize as number) > 0
+        ? Math.min(dto.pageSize as number, 100)
+        : 20;
 
     const { problems, total } = await this.problemRepository.findMany({
       search: dto.search,
