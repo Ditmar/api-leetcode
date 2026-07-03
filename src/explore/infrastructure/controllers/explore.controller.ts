@@ -4,6 +4,7 @@ import { GetTopicsUseCase } from '../../application/use-cases/get-topics.use-cas
 import { GetTopicBySlugUseCase } from '../../application/use-cases/get-topic-by-slug.use-case';
 import { GetCategoriesUseCase } from '../../application/use-cases/get-categories.use-case';
 import { GetExploreStatsUseCase } from '../../application/use-cases/get-explore-stats.use-case';
+import { UserId } from '../../../user/domain/user-id';
 
 export class ExploreController {
   constructor(
@@ -17,11 +18,25 @@ export class ExploreController {
     try {
       const { category, difficulty, page, limit } = req.query;
 
+      const pageNumber = Number(page);
+      const limitNumber = Number(limit);
+
+      if (
+        (page !== undefined &&
+          (!Number.isInteger(pageNumber) || pageNumber <= 0)) ||
+        (limit !== undefined &&
+          (!Number.isInteger(limitNumber) || limitNumber <= 0))
+      ) {
+        return res.status(400).json({
+          message: "'page' and 'limit' must be positive integers.",
+        });
+      }
+
       const topics = await this.getTopicsUseCase.execute({
         category: category as string,
         difficulty: difficulty as string,
-        page: page ? Number(page) : 1,
-        limit: limit ? Number(limit) : 10,
+        page: page !== undefined ? pageNumber : 1,
+        limit: limit !== undefined ? limitNumber : 10,
       });
 
       return res.json(topics);
@@ -91,9 +106,9 @@ export class ExploreController {
         });
       }
 
-      const stats = await this.getExploreStatsUseCase.execute(
-        authRequest.user.id
-      );
+      const userId = new UserId(authRequest.user.id);
+
+      const stats = await this.getExploreStatsUseCase.execute(userId);
 
       return res.json(stats);
     } catch (error) {

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { PrismaTopicRepository } from './persistence/prisma-topic.repository';
+import { UserMockRepository } from '../../user/infrastructure/repository/user-mock-repository';
 
 import { GetTopicsUseCase } from '../application/use-cases/get-topics.use-case';
 import { GetTopicBySlugUseCase } from '../application/use-cases/get-topic-by-slug.use-case';
@@ -24,12 +25,13 @@ const getController = (): ExploreController => {
   const prisma = getPrismaClient;
 
   const repository = new PrismaTopicRepository(prisma);
+  const userRepository = new UserMockRepository();
 
   cachedController = new ExploreController(
     new GetTopicsUseCase(repository),
     new GetTopicBySlugUseCase(repository),
     new GetCategoriesUseCase(repository),
-    new GetExploreStatsUseCase(repository)
+    new GetExploreStatsUseCase(repository, userRepository)
   );
 
   return cachedController;
@@ -45,6 +47,34 @@ exploreRouter.get('/categories', (req, res) =>
   getController().getCategories(req, res)
 );
 
+/**
+ * @openapi
+ * /explore/stats:
+ *   get:
+ *     summary: Get explore statistics for the authenticated user.
+ *     tags:
+ *       - Explore
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Explore statistics retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalTopics:
+ *                   type: integer
+ *                 solvedProblems:
+ *                   type: integer
+ *                 overallProgress:
+ *                   type: integer
+ *       401:
+ *         description: User is not authenticated or the user is invalid.
+ *       500:
+ *         description: Internal server error.
+ */
 exploreRouter.get('/stats', authMiddleware, (req, res) =>
   getController().getStats(req, res)
 );

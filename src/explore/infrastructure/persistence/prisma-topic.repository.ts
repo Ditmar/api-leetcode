@@ -93,34 +93,42 @@ export class PrismaTopicRepository implements TopicRepository {
   }
 
   async getStats(userId: string): Promise<ExploreStats> {
-    const totalTopics = await this.prisma.topic.count({
-      where: { isActive: true },
-    });
+    try {
+      const totalTopics = await this.prisma.topic.count({
+        where: { isActive: true },
+      });
 
-    const progress = await this.prisma.topicProgress.findMany({
-      where: { userId },
-    });
+      const progress = await this.prisma.topicProgress.findMany({
+        where: { userId },
+      });
 
-    const solvedProblems = progress.reduce(
-      (acc, item) => acc + item.progress,
-      0
-    );
+      const solvedProblems = progress.reduce(
+        (acc, item) => acc + item.progress,
+        0
+      );
 
-    const totalProblems = await this.prisma.topic.aggregate({
-      _sum: {
-        totalProblems: true,
-      },
-    });
+      const totalProblems = await this.prisma.topic.aggregate({
+        _sum: {
+          totalProblems: true,
+        },
+      });
 
-    const overallProgress =
-      totalProblems._sum.totalProblems && totalProblems._sum.totalProblems > 0
-        ? Math.round((solvedProblems / totalProblems._sum.totalProblems) * 100)
-        : 0;
+      const overallProgress =
+        totalProblems._sum.totalProblems && totalProblems._sum.totalProblems > 0
+          ? Math.round(
+              (solvedProblems / totalProblems._sum.totalProblems) * 100
+            )
+          : 0;
 
-    return {
-      totalTopics,
-      solvedProblems,
-      overallProgress,
-    };
+      return {
+        totalTopics,
+        solvedProblems,
+        overallProgress,
+      };
+    } catch (error) {
+      console.error('[TopicRepository:getStats]', error);
+
+      throw new Error('Failed to retrieve explore statistics.');
+    }
   }
 }
