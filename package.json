@@ -1,6 +1,6 @@
 {
   "name": "api-leetcode",
-  "version": "0.0.4-rc.6",
+  "version": "0.0.2.1",
   "description": "Express API with TypeScript",
   "main": "dist/index.js",
   "scripts": {
@@ -11,9 +11,11 @@
     "lint:fix": "npx eslint \"src/**/*.ts\" --fix",
     "format": "npx prettier --write src/**/*.ts",
     "prepare": "npx husky install",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "typecheck:worker": "tsc -p worker/tsconfig.json --noEmit",
     "db:up": "docker compose -f ./local-database/database.yaml up -d",
-    "prisma:migrate": "npx prisma migrate dev"
+    "prisma:migrate": "npx prisma migrate dev --name init"
   },
   "keywords": [
     "express",
@@ -35,6 +37,7 @@
     "@types/bcrypt": "6.0.0",
     "@types/config": "^3.3.5",
     "@types/express": "5.0.5",
+    "@types/jest": "^29.5.14",
     "@types/jsonwebtoken": "9.0.10",
     "@types/node": "24.10.0",
     "@types/pino": "7.0.5",
@@ -45,10 +48,12 @@
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "5.5.4",
     "husky": "9.1.7",
+    "jest": "^29.7.0",
     "lint-staged": "16.2.6",
     "nodemon": "3.1.10",
     "prettier": "3.6.2",
-    "prisma": "6.19.0",
+    "prisma": "^6.19.3",
+    "ts-jest": "^29.2.5",
     "ts-node": "10.9.2",
     "tsc-alias": "1.8.16",
     "tsconfig-paths": "4.2.0",
@@ -62,12 +67,12 @@
     "class-validator": "0.15.1",
     "config": "^4.1.1",
     "dotenv": "17.2.3",
-    "express": "4.21.2",
+    "express": "^4.22.2",
     "jsonwebtoken": "9.0.2",
     "pino": "10.1.0",
     "pino-pretty": "13.1.2",
     "reflect-metadata": "0.2.2",
-    "uuid": "13.0.0",
+    "uuid": "^13.0.2",
     "zod": "4.1.13"
   }
 }
