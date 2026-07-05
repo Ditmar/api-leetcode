@@ -15,8 +15,7 @@
     "db:up": "docker compose -f ./local-database/database.yaml up -d",
     "prisma:migrate": "npx prisma migrate dev",
     "release": "release-it",
-    "release:rc": "release-it --preRelease=rc",
-    "release:stable": "release-it"
+    "release:rc": "release-it --preRelease=rc"
   },
   "keywords": [
     "express",
@@ -45,7 +44,6 @@
     "@types/uuid": "10.0.0",
     "@typescript-eslint/eslint-plugin": "8.46.3",
     "@typescript-eslint/parser": "8.46.3",
-    "conventional-changelog-conventionalcommits": "^10.2.1",
     "eslint": "8.57.1",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "5.5.4",
