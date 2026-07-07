@@ -20,7 +20,8 @@ export class ExpressUserController {
     const newUser = await services.user.create.execute(
       req.body.id,
       req.body.name,
-      req.body.email
+      req.body.email,
+      req.body.password
     );
     res.status(201).json(newUser);
   }
