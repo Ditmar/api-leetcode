@@ -1,11 +1,12 @@
-name: Build and Push Docker Image 
+name: CI
 on:
   push:
     branches:
       - '**'
+  pull_request:
   workflow_dispatch:
 jobs:
-  build-and-push:
+  test-submissions:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -13,18 +14,30 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
-      - name: Set DATABASE_URL environment variable
-        run: echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV
-      - name: Prisma generate
-        run: npx prisma generate
-      - name: Build app
-        run: npm run build
+      - name: Run submissions tests
+        run: node --test -r ts-node/register/transpile-only src/submissions/tests/submission-use-cases.test.ts
+  build-and-push:
+    needs: test-submissions
+    if: ${{ github.event_name != 'pull_request' && secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
       - name: Get package json version
         run: echo "VERSION=$(node -p -e "require('./package.json').version")" >> $GITHUB_ENV
+      - name: Set image tag
+        run: echo "IMAGE_TAG=${VERSION}-$(echo ${GITHUB_SHA} | cut -c1-12)" >> $GITHUB_ENV
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to Docker Hub
@@ -37,4 +50,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ditmar/api-leetcode:${{ env.VERSION }}
+          tags: ditmar/api-leetcode:${{ env.IMAGE_TAG }}
