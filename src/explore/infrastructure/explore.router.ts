@@ -1,7 +1,6 @@
 import { Router } from 'express';
 
 import { PrismaTopicRepository } from './persistence/prisma-topic.repository';
-import { UserMockRepository } from '../../user/infrastructure/repository/user-mock-repository';
 
 import { GetTopicsUseCase } from '../application/use-cases/get-topics.use-case';
 import { GetTopicBySlugUseCase } from '../application/use-cases/get-topic-by-slug.use-case';
@@ -12,6 +11,7 @@ import { ExploreController } from './controllers/explore.controller';
 
 import { authMiddleware } from '../../share/infrastructure/middleware/auth.middleware';
 import { prisma as getPrismaClient } from '../../share/infrastructure/prisma-client';
+import { PrismaUserRepository } from './persistence/prisma-user.repository';
 
 const exploreRouter = Router();
 
@@ -25,7 +25,7 @@ const getController = (): ExploreController => {
   const prisma = getPrismaClient;
 
   const repository = new PrismaTopicRepository(prisma);
-  const userRepository = new UserMockRepository();
+  const userRepository = new PrismaUserRepository(prisma);
 
   cachedController = new ExploreController(
     new GetTopicsUseCase(repository),

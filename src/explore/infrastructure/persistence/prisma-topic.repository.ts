@@ -55,11 +55,11 @@ export class PrismaTopicRepository implements TopicRepository {
     const topic = await this.prisma.topic.findUnique({
       where: { slug },
       include: {
-        topicProblems: {
-          include: { problem: true },
-          orderBy: { order: 'asc' },
-        },
-        userProgress: userId ? { where: { userId } } : false,
+        userProgress: userId
+          ? {
+              where: { userId },
+            }
+          : false,
       },
     });
 
@@ -94,30 +94,34 @@ export class PrismaTopicRepository implements TopicRepository {
 
   async getStats(userId: string): Promise<ExploreStats> {
     try {
-      const totalTopics = await this.prisma.topic.count({
-        where: { isActive: true },
-      });
+      const [totalTopics, totalProblems, acceptedProblems] = await Promise.all([
+        this.prisma.topic.count({
+          where: { isActive: true },
+        }),
+        this.prisma.topic.aggregate({
+          _sum: {
+            totalProblems: true,
+          },
+        }),
+        this.prisma.problemSubmission.findMany({
+          where: {
+            userId,
+            status: 'accepted',
+          },
+          distinct: ['problemId'],
+          select: {
+            problemId: true,
+          },
+        }),
+      ]);
 
-      const progress = await this.prisma.topicProgress.findMany({
-        where: { userId },
-      });
+      const solvedProblems = acceptedProblems.length;
 
-      const solvedProblems = progress.reduce(
-        (acc, item) => acc + item.progress,
-        0
-      );
-
-      const totalProblems = await this.prisma.topic.aggregate({
-        _sum: {
-          totalProblems: true,
-        },
-      });
+      const totalProblemCount = totalProblems._sum.totalProblems ?? 0;
 
       const overallProgress =
-        totalProblems._sum.totalProblems && totalProblems._sum.totalProblems > 0
-          ? Math.round(
-              (solvedProblems / totalProblems._sum.totalProblems) * 100
-            )
+        totalProblemCount > 0
+          ? Math.round((solvedProblems / totalProblemCount) * 100)
           : 0;
 
       return {

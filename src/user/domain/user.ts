@@ -2,17 +2,20 @@ import { UserCreateAt } from './user-create-at';
 import { UserEmail } from './user-email';
 import { UserId } from './user-id';
 import { UserName } from './user-name';
+import { UserPassword } from './user-password';
 
 export class User {
   id: UserId;
   name: UserName;
   email: UserEmail;
+  password: UserPassword;
   createdAt: UserCreateAt;
 
-  constructor(id: string, name: string, email: string) {
+  constructor(id: string, name: string, email: string, password: string) {
     this.id = new UserId(id);
     this.name = new UserName(name);
     this.email = new UserEmail(email);
+    this.password = new UserPassword(password);
     this.createdAt = new UserCreateAt(new Date());
   }
   public setName(name: UserName): void {
@@ -20,6 +23,9 @@ export class User {
   }
   public setEmail(email: UserEmail): void {
     this.email = email;
+  }
+  public setPassword(password: UserPassword): void {
+    this.password = password;
   }
   public print(): void {
     console.log(
