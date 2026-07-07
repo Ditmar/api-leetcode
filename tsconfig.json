@@ -30,7 +30,8 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "allowUnusedLabels": false,
-    "allowUnreachableCode": false
+    "allowUnreachableCode": false,
+    "types": ["jest", "node"]
   },
   "ts-node": {
     "require": ["tsconfig-paths/register"]
