@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { createInterface } from 'readline';
 
 const rl = createInterface({
@@ -8,11 +9,12 @@ const rl = createInterface({
 
 const lines: string[] = [];
 
-rl.on('line', (line) => lines.push(line));
+rl.on('line', (line: string) => lines.push(line));
 
 rl.on('close', async () => {
   try {
-    const { solution } = await import('./solution.js');
+    const modulePath = './solution.js';
+    const { solution } = await import(modulePath);
     
     const result = solution(lines);
     
