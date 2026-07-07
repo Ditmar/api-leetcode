@@ -1,0 +1,76 @@
+import { Router } from 'express';
+import { getPrismaClient } from '../../share/infrastructure/prisma';
+import { AuthMiddleware } from '../../auth/infrastructure/middleware/auth-middleware';
+import { PrismaProblemRepository } from './persistence/prisma-problem.repository';
+import { ProblemsController } from './controllers/problems.controller';
+import { GetProblemsUseCase } from '../application/use-cases/get-problems.use-case';
+import { GetProblemByIdUseCase } from '../application/use-cases/get-problem-by-id.use-case';
+import { GetProblemBySlugUseCase } from '../application/use-cases/get-problem-by-slug.use-case';
+import { GetTagsUseCase } from '../application/use-cases/get-tags.use-case';
+import { GetStatsUseCase } from '../application/use-cases/get-stats.use-case';
+import { CreateProblemUseCase } from '../application/use-cases/create-problem.use-case';
+import { UpdateProblemUseCase } from '../application/use-cases/update-problem.use-case';
+
+const repository = new PrismaProblemRepository(getPrismaClient());
+
+const controller = new ProblemsController(
+  new GetProblemsUseCase(repository),
+  new GetProblemByIdUseCase(repository),
+  new GetProblemBySlugUseCase(repository),
+  new GetTagsUseCase(repository),
+  new GetStatsUseCase(repository),
+  new CreateProblemUseCase(repository),
+  new UpdateProblemUseCase(repository),
+  repository
+);
+
+const problemsRouter = Router();
+
+problemsRouter.get('/', (req, res) => controller.list(req, res));
+problemsRouter.get('/tags', (req, res) => controller.tags(req, res));
+problemsRouter.get('/stats', AuthMiddleware.validateToken, (req, res) =>
+  controller.stats(req, res)
+);
+problemsRouter.get('/:id', (req, res) => controller.getById(req, res));
+problemsRouter.get('/slug/:slug', (req, res) => controller.getBySlug(req, res));
+/**
+ * POST /problems
+ * Creates a new coding problem. Requires a valid JWT.
+ *
+ * Expected request body (CreateProblemDto):
+ * {
+ *   slug: string;                 // unique, lowercase, hyphen-separated (e.g. "two-sum")
+ *   title: string;
+ *   description: string;
+ *   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+ *   tags: string[];
+ *   constraints: string[];
+ *   testCases: {
+ *     input: string;
+ *     expectedOutput: string;
+ *     explanation?: string;
+ *     isExample: boolean;
+ *     order: number;
+ *   }[];                          // must be a non-empty array
+ *   starterCodes: {
+ *     language: string;
+ *     code: string;
+ *   }[];                          // must be a non-empty array
+ * }
+ *
+ * Responses:
+ *   201 — Created, returns ProblemDetailDto
+ *   400 — Validation failed, returns { message, errors: [{ field, constraints }] }
+ *   401 — Missing/invalid JWT
+ */
+problemsRouter.post('/', AuthMiddleware.validateToken, (req, res) =>
+  controller.create(req, res)
+);
+problemsRouter.patch('/:id', AuthMiddleware.validateToken, (req, res) =>
+  controller.update(req, res)
+);
+problemsRouter.delete('/:id', AuthMiddleware.validateToken, (req, res) =>
+  controller.remove(req, res)
+);
+
+export { problemsRouter };
