@@ -7,19 +7,24 @@ import type {
   ExecutorInput,
   ExecutorOutput,
   TestCaseResult,
-  TestCaseStatus,
+  TestCaseStatus,D
 } from '../executor.interface';
 
 const IMAGE = 'executor-cpp:latest';
-// C++ is the highest-risk language (system(), fork(), exec(), /proc access),
-// so it gets a tighter pids-limit than the DockerRunner default.
-const CPP_PIDS_LIMIT = 32;
-// Compilation itself has no test-input dependency, give it a fixed
-// generous budget instead of the (possibly very short) per-test timeout.
+
+// --- FIX #1 (DevJTG): pids-limit separado para compile y run ---
+// El binario del usuario (no confiable) se mantiene estrangulado.
+const CPP_RUN_PIDS_LIMIT = 32;
+// g++ genera varios subprocesos (cc1plus, as, ld, collect2); templates
+// pesados forkean aún más, así que la compilación necesita más holgura.
+const CPP_COMPILE_PIDS_LIMIT = 128;
+
+// La compilación no depende del input de los tests: le damos un presupuesto
+// fijo y generoso en vez del timeout por-test (que puede ser muy corto).
 const COMPILE_TIMEOUT_MS = 15_000;
 
 const COMPILE_SCRIPT = `#!/bin/sh
-g++ -std=c++17 -O0 -o /code/solution /code/solution.cpp
+g++ -std=c++17 -O2 -o /code/solution /code/solution.cpp
 exit $?
 `;
 
@@ -27,6 +32,19 @@ const RUN_SCRIPT = `#!/bin/sh
 /code/solution
 exit $?
 `;
+
+// --- FIX #2 (DevJTG): normalización de salida ---
+// .trim() solo recorta los extremos del string completo. Esto normaliza
+// saltos de línea (CRLF -> LF), espacios al final de cada línea y líneas
+// en blanco finales, para evitar "wrong answer" falsos entre plataformas.
+function normalizeOutput(raw: string): string {
+  return raw
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[ \t]+$/, ''))
+    .join('\n')
+    .replace(/\n+$/, '');
+}
 
 export class CppExecutor implements LanguageExecutor {
   readonly language = 'cpp' as const;
@@ -41,10 +59,10 @@ export class CppExecutor implements LanguageExecutor {
     );
 
     try {
-      // mkdtemp creates the directory with mode 0700 owned by the host
-      // user, but the container runs as uid 1001 (non-root `executor`).
-      // Open it up so the container can read solution.cpp and write the
-      // compiled binary into /code.
+      // mkdtemp crea el directorio con modo 0700 propiedad del usuario host,
+      // pero el contenedor corre como uid 1001 (usuario 'executor' no-root).
+      // Lo abrimos para que el contenedor pueda leer solution.cpp y escribir
+      // el binario compilado en /code.
       await fs.chmod(tmpDir, 0o777);
 
       await fs.writeFile(path.join(tmpDir, 'solution.cpp'), input.code, {
@@ -63,7 +81,7 @@ export class CppExecutor implements LanguageExecutor {
         tmpDir,
         timeoutMs: COMPILE_TIMEOUT_MS,
         memoryMb: input.memoryMb,
-        pidsLimit: CPP_PIDS_LIMIT,
+        pidsLimit: CPP_COMPILE_PIDS_LIMIT, // FIX #1
       });
 
       if (compileResult.exitCode !== 0) {
@@ -72,7 +90,7 @@ export class CppExecutor implements LanguageExecutor {
           testCaseResults: [],
           totalRuntimeMs: 0,
           peakMemoryMb: 0,
-          compileError: compileResult.stderr.trim() || 'Compilation failed',
+          compileError: compileResult.stderr || 'Compilation failed',
         };
       }
 
@@ -88,7 +106,7 @@ export class CppExecutor implements LanguageExecutor {
           tmpDir,
           timeoutMs: input.timeoutMs,
           memoryMb: input.memoryMb,
-          pidsLimit: CPP_PIDS_LIMIT,
+          pidsLimit: CPP_RUN_PIDS_LIMIT, // FIX #1
           stdin: tc.input,
         });
         const runtimeMs = Date.now() - start;
@@ -100,13 +118,14 @@ export class CppExecutor implements LanguageExecutor {
         if (timedOut) {
           status = 'time_limit_exceeded';
         } else if (exitCode !== 0) {
-          // Non-zero exit after a successful compile means a crash
-          // (segfault, abort, uncaught exception, etc.)
+          // Salida distinta de 0 tras compilar OK = crash del programa
+          // (segfault, abort, excepción no capturada, etc.)
           status = 'runtime_error';
         } else {
-          actualOutput = stdout.trim();
-          status =
-            actualOutput === tc.expectedOutput.trim() ? 'passed' : 'failed';
+          // FIX #2: comparación normalizada línea por línea.
+          actualOutput = normalizeOutput(stdout);
+        status =
+          actualOutput === normalizeOutput(tc.expectedOutput) ? 'passed' : 'failed';
         }
 
         const passed = status === 'passed';
@@ -137,7 +156,12 @@ export class CppExecutor implements LanguageExecutor {
         status: overallStatus,
         testCaseResults,
         totalRuntimeMs,
-        peakMemoryMb: input.memoryMb,
+        // --- FIX #3 (DevJTG): NO reportar el límite configurado como si fuera
+        // el pico real. Medir el consumo real requiere leer memory.peak del
+        // cgroup (o `docker stats`) en DockerRunner. Hasta implementarlo,
+        // devolvemos 0 en vez de una métrica engañosa. Ver issue de seguimiento.
+        // TODO(API-EXE-004): peak real desde DockerRunner.run().
+        peakMemoryMb: 0,
       };
     } finally {
       await fs.rm(tmpDir, { recursive: true, force: true });

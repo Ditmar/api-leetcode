@@ -37,6 +37,21 @@ describe('CppExecutor', () => {
     executor = new CppExecutor(runner);
   });
 
+  it('normalizes CRLF and trailing spaces when comparing (does not flag wrong answer false)', async () => {
+  // compile ok, then a run whose stdout has \r\n and spaces at the end of the line
+  mockRun
+    .mockResolvedValueOnce(okResult({ exitCode: 0 })) // compile
+    .mockResolvedValueOnce(okResult({ stdout: '4 \r\n2 \r\n' })); // run
+
+  const input = buildInput({
+    testCases: [{ id: 'tc1', input: '', expectedOutput: '4\n2' }],
+  });
+
+  const result = await executor.execute(input);
+
+  expect(result.status).toBe('accepted');
+});
+
   it('returns "accepted" when compilation succeeds and output matches', async () => {
     mockRun
       .mockResolvedValueOnce(okResult()) // compile step
@@ -126,7 +141,8 @@ describe('CppExecutor', () => {
     expect(result.testCaseResults).toHaveLength(2);
     expect(result.testCaseResults[0]?.passed).toBe(true);
     expect(result.testCaseResults[1]?.passed).toBe(false);
-  });
+    expect(mockRun).toHaveBeenNthCalledWith(1, expect.objectContaining({ image: 'executor-cpp:latest', pidsLimit: 128 }));
+   });
 
   it('forwards the C++ sandbox hardening (pids-limit 32) and stdin to the DockerRunner', async () => {
     mockRun
