@@ -38,5 +38,4 @@ jobs:
           context: .
           push: true
           tags: |
-            ditmar/api-leetcode:${{ env.VERSION }}
             ditmar/api-leetcode:sha-${{ github.sha }}
