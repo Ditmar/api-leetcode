@@ -32,6 +32,9 @@ import { CourseGetById } from '../../course/application/course-get-by-id/course-
 import { CourseEnroll } from '../../course/application/course-enroll/course-enroll';
 import { CourseGetByUser } from '../../course/application/course-get-by-user/course-get-by-user';
 
+import { PrismaRankingRepository } from '../../ranking/infrastructure/persistence/prisma-ranking.repository';
+import { GetRankingUseCase } from '../../ranking/application/use-cases/get-ranking.use-case';
+
 // ============================================
 // REPOSITORIES
 // ============================================
@@ -41,6 +44,7 @@ const refreshTokenRepository = new RefreshTokenPrismaRepository(prisma);
 const testRepository = new TestPrismaRepository(prisma);
 const courseRepository = new CoursePrismaRepository(prisma);
 const enrollmentRepository = new EnrollmentPrismaRepository(prisma);
+const rankingRepository = new PrismaRankingRepository(prisma);
 
 // ============================================
 // EXPORT SERVICES
@@ -70,5 +74,8 @@ export const services = {
     getById: new CourseGetById(courseRepository),
     enroll: new CourseEnroll(enrollmentRepository),
     getByUser: new CourseGetByUser(enrollmentRepository, courseRepository),
+  },
+  ranking: {
+    get: new GetRankingUseCase(rankingRepository),
   },
 };

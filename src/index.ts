@@ -12,6 +12,7 @@ import { testRoutes } from './tests/infraestructure/routes/test-routes';
 import { courseRoutes } from './course/infrastructure/routes/course-routes';
 import { contestRoutes } from './contests/infrastructure/contests.router';
 import { problemsRouter } from './problems/infrastructure/problems.router';
+import { rankingRouter } from './ranking/infrastructure/ranking.router';
 
 const app: Application = express();
 
@@ -46,6 +47,7 @@ app.use('/api/tests', testRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/contests', contestRoutes);
 app.use('/api/problems', problemsRouter);
+app.use('/api/ranking', rankingRouter);
 
 app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
