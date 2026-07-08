@@ -42,10 +42,14 @@ test('orders ranking by points and paginates the results', () => {
   });
 
   assert.equal(result.items.length, 2);
-  assert.equal(result.items[0].userId, 'u-1');
-  assert.equal(result.items[1].userId, 'u-3');
-  assert.equal(result.items[0].position, 1);
-  assert.equal(result.items[1].position, 2);
+  const firstItem = result.items[0];
+  const secondItem = result.items[1];
+  assert.ok(firstItem);
+  assert.ok(secondItem);
+  assert.equal(firstItem.userId, 'u-1');
+  assert.equal(secondItem.userId, 'u-3');
+  assert.equal(firstItem.position, 1);
+  assert.equal(secondItem.position, 2);
   assert.equal(result.pagination.total, 3);
   assert.equal(result.pagination.limit, 2);
   assert.equal(result.pagination.offset, 0);
@@ -81,6 +85,10 @@ test('sorts by average score when requested', () => {
     offset: 0,
   });
 
-  assert.equal(result.items[0].userId, 'u-2');
-  assert.equal(result.items[1].userId, 'u-1');
+  const firstAverageItem = result.items[0];
+  const secondAverageItem = result.items[1];
+  assert.ok(firstAverageItem);
+  assert.ok(secondAverageItem);
+  assert.equal(firstAverageItem.userId, 'u-2');
+  assert.equal(secondAverageItem.userId, 'u-1');
 });

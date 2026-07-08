@@ -50,7 +50,7 @@ export class PrismaRankingRepository implements RankingRepository {
             where: { courseId: filters.courseId },
             select: { userId: true },
           })
-        ).map(enrollment => enrollment.userId)
+        ).map((enrollment: { userId: string }) => enrollment.userId)
       : undefined;
 
     const submissions = await this.prisma.submission.findMany({
@@ -92,13 +92,15 @@ export class PrismaRankingRepository implements RankingRepository {
       const breakdown = Array.isArray(submission.breakdown)
         ? submission.breakdown
         : [];
-      const correctAnswers = breakdown.reduce((total, item) => {
+      let correctAnswers = 0;
+      for (const item of breakdown as Array<unknown>) {
         const entry = item as { details?: Array<{ correct?: boolean }> };
         if (entry?.details) {
-          return total + entry.details.filter(detail => detail.correct).length;
+          correctAnswers += entry.details.filter(
+            detail => detail.correct
+          ).length;
         }
-        return total;
-      }, 0);
+      }
 
       row.totalPoints += Number(submission.score);
       row.submissions += 1;
