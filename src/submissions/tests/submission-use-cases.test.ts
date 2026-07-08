@@ -9,7 +9,7 @@ class InMemorySubmissionRepository implements SubmissionRepository {
   private readonly submissions = new Map<string, Submission>();
 
   async create(submission: Submission): Promise<Submission> {
-    this.submissions.set(submission.id, submission);
+    this.submissions.set(submission.getId(), submission);
     return submission;
   }
 
@@ -19,12 +19,12 @@ class InMemorySubmissionRepository implements SubmissionRepository {
 
   async findByUserId(userId: string): Promise<Submission[]> {
     return Array.from(this.submissions.values()).filter(
-      submission => submission.userId === userId
+      submission => submission.getUserId() === userId
     );
   }
 
   async update(submission: Submission): Promise<Submission> {
-    this.submissions.set(submission.id, submission);
+    this.submissions.set(submission.getId(), submission);
     return submission;
   }
 }
@@ -32,12 +32,18 @@ class InMemorySubmissionRepository implements SubmissionRepository {
 test('CreateSubmissionUseCase should persist and process a submission', async () => {
   const repository = new InMemorySubmissionRepository();
   const useCase = new CreateSubmissionUseCase(repository, {
-    process: async submission => ({
-      ...submission,
-      status: 'accepted',
-      runtime: 15,
-      memory: 64,
-    }),
+    process: async submission =>
+      new Submission(
+        submission.getId(),
+        submission.getProblemId(),
+        submission.getUserId(),
+        submission.getLanguage(),
+        submission.getCode(),
+        'accepted',
+        15,
+        64,
+        submission.getCreatedAt()
+      ),
   });
 
   const created = await useCase.execute({
@@ -47,9 +53,26 @@ test('CreateSubmissionUseCase should persist and process a submission', async ()
     userId: 'user-1',
   });
 
-  assert.equal(created.status, 'accepted');
-  assert.equal(created.problemId, 'problem-1');
-  assert.equal(created.userId, 'user-1');
+  assert.equal(created.getStatus(), 'accepted');
+  assert.equal(created.getProblemId(), 'problem-1');
+  assert.equal(created.getUserId(), 'user-1');
+});
+
+test('CreateSubmissionUseCase should require userId', async () => {
+  const repository = new InMemorySubmissionRepository();
+  const useCase = new CreateSubmissionUseCase(repository, {
+    process: async submission => submission,
+  });
+
+  await assert.rejects(
+    () =>
+      useCase.execute({
+        problemId: 'problem-1',
+        language: 'typescript',
+        code: 'const answer = 42;',
+      } as never),
+    /userId is required/
+  );
 });
 
 test('GetSubmissionByIdUseCase should return an existing submission', async () => {
@@ -70,6 +93,6 @@ test('GetSubmissionByIdUseCase should return an existing submission', async () =
   const useCase = new GetSubmissionByIdUseCase(repository);
   const result = await useCase.execute('submission-1');
 
-  assert.equal(result?.id, 'submission-1');
-  assert.equal(result?.status, 'pending');
+  assert.equal(result?.getId(), 'submission-1');
+  assert.equal(result?.getStatus(), 'pending');
 });

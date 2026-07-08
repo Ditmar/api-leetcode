@@ -20,6 +20,8 @@ jobs:
         run: npm ci
       - name: Run submissions tests
         run: node --test -r ts-node/register/transpile-only src/submissions/tests/submission-use-cases.test.ts
+      - name: Run submissions linter
+        run: npx eslint "src/submissions/**/*.ts"
   build-and-push:
     needs: test-submissions
     if: ${{ github.event_name != 'pull_request' && secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}

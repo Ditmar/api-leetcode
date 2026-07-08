@@ -19,10 +19,15 @@ export class SubmissionsController {
       });
       res.status(201).json(result);
     } catch (error) {
-      res.status(400).json({
-        message:
-          error instanceof Error ? error.message : 'Internal server error',
-      });
+      const message =
+        error instanceof Error ? error.message : 'Internal server error';
+      const statusCode =
+        error instanceof Error &&
+        /required|invalid|missing/i.test(error.message)
+          ? 400
+          : 500;
+
+      res.status(statusCode).json({ message });
     }
   }
 

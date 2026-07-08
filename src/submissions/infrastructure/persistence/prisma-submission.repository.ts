@@ -1,5 +1,11 @@
-import { PrismaClient } from '@prisma/client';
-import { Submission } from '../../domain/entities/submission.entity';
+import {
+  PrismaClient,
+  type ProblemSubmission as PrismaProblemSubmission,
+} from '@prisma/client';
+import {
+  Submission,
+  type SubmissionStatus,
+} from '../../domain/entities/submission.entity';
 import { SubmissionRepository } from '../../domain/repositories/submission.repository';
 
 export class PrismaSubmissionRepository extends SubmissionRepository {
@@ -10,15 +16,15 @@ export class PrismaSubmissionRepository extends SubmissionRepository {
   async create(submission: Submission): Promise<Submission> {
     const raw = await this.prisma.problemSubmission.create({
       data: {
-        id: submission.id,
-        problemId: submission.problemId,
-        userId: submission.userId,
-        language: submission.language,
-        code: submission.code,
+        id: submission.getId(),
+        problemId: submission.getProblemId(),
+        userId: submission.getUserId(),
+        language: submission.getLanguage(),
+        code: submission.getCode(),
         mode: 'submit',
-        status: submission.status,
-        runtimeMs: submission.runtime ?? undefined,
-        memoryMb: submission.memory ?? undefined,
+        status: submission.getStatus(),
+        runtimeMs: submission.getRuntime() ?? undefined,
+        memoryMb: submission.getMemory() ?? undefined,
       },
     });
 
@@ -37,52 +43,30 @@ export class PrismaSubmissionRepository extends SubmissionRepository {
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
-    return raws.map(
-      (raw: {
-        id: string;
-        problemId: string;
-        userId: string;
-        language: string;
-        code: string;
-        status: string;
-        runtimeMs: number | null;
-        memoryMb: number | null;
-        createdAt: Date;
-      }) => this.toDomain(raw)
-    );
+    return raws.map(raw => this.toDomain(raw));
   }
 
   async update(submission: Submission): Promise<Submission> {
     const raw = await this.prisma.problemSubmission.update({
-      where: { id: submission.id },
+      where: { id: submission.getId() },
       data: {
-        status: submission.status,
-        runtimeMs: submission.runtime ?? undefined,
-        memoryMb: submission.memory ?? undefined,
+        status: submission.getStatus(),
+        runtimeMs: submission.getRuntime() ?? undefined,
+        memoryMb: submission.getMemory() ?? undefined,
       },
     });
 
     return this.toDomain(raw);
   }
 
-  private toDomain(raw: {
-    id: string;
-    problemId: string;
-    userId: string;
-    language: string;
-    code: string;
-    status: string;
-    runtimeMs: number | null;
-    memoryMb: number | null;
-    createdAt: Date;
-  }): Submission {
+  private toDomain(raw: PrismaProblemSubmission): Submission {
     return new Submission(
       raw.id,
       raw.problemId,
       raw.userId,
       raw.language,
       raw.code,
-      raw.status,
+      raw.status as SubmissionStatus,
       raw.runtimeMs,
       raw.memoryMb,
       raw.createdAt

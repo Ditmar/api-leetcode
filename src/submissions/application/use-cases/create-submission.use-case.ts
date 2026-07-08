@@ -11,10 +11,14 @@ export class CreateSubmissionUseCase {
   ) {}
 
   async execute(dto: CreateSubmissionDto): Promise<Submission> {
+    if (!dto.userId?.trim()) {
+      throw new Error('userId is required');
+    }
+
     const submission = new Submission(
       uuidv4(),
       dto.problemId,
-      dto.userId ?? '',
+      dto.userId.trim(),
       dto.language,
       dto.code,
       'pending',
