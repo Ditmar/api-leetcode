@@ -22,6 +22,11 @@ export interface DockerRunOutput {
   timeoutTriggered?: boolean;
 }
 
+/**
+ * Infrastructure Mock for Docker execution.
+ * NOTE: This is a temporary stub. Security constraints (timeout, network, memory)
+ * will be implemented in ticket API-EXE-001.
+ */
 export class DockerRunner {
   async run(input: DockerRunInput): Promise<DockerRunOutput> {
     const {
