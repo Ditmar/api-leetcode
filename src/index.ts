@@ -12,6 +12,7 @@ import { testRoutes } from './tests/infraestructure/routes/test-routes';
 import { courseRoutes } from './course/infrastructure/routes/course-routes';
 import { contestRoutes } from './contests/infrastructure/contests.router';
 import { problemsRouter } from './problems/infrastructure/problems.router';
+import { leaderboardRoutes } from './leaderboard/infrastructure/routes/leaderboard-routes';
 
 const app: Application = express();
 
@@ -29,6 +30,7 @@ app.get('/', (req: Request, res: Response) => {
       users: '/api/user',
       tests: '/api/tests',
       courses: '/api/courses',
+      leaderboard: '/leaderboard',
     },
   });
 });
@@ -46,6 +48,8 @@ app.use('/api/tests', testRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/contests', contestRoutes);
 app.use('/api/problems', problemsRouter);
+app.use('/leaderboard', leaderboardRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 
 app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
