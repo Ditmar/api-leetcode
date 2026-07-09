@@ -6,7 +6,6 @@ import { PythonExecutor } from './python.executor';
 import { DockerRunner, DockerRunOutput } from '../docker.runner';
 import { ExecutorInput } from '../executor.interface';
 
-// Mock fs to avoid actual disk writing during tests
 jest.mock('fs', () => ({
   promises: {
     mkdtemp: jest.fn().mockResolvedValue('/tmp/mock-dir'),
@@ -33,6 +32,33 @@ describe('PythonExecutor', () => {
     } as unknown as jest.Mocked<DockerRunner>;
     executor = new PythonExecutor(dockerRunner);
     jest.clearAllMocks();
+  });
+
+  it('should call DockerRunner with the correct execution and security parameters', async () => {
+    dockerRunner.run.mockResolvedValueOnce({
+      stdout: 'Hello\n',
+      stderr: '',
+      exitCode: 0,
+    } as DockerRunOutput);
+
+    await executor.execute(mockInput);
+
+    expect(dockerRunner.run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        image: 'executor-python:latest',
+        command: ['python3', 'main.py'],
+        tmpDir: '/tmp/mock-dir',
+        timeoutMs: 1000,
+        memoryMb: 256,
+        stdin: '',
+        networkDisabled: true,
+        readOnly: true,
+        pidsLimit: 100,
+        user: '1000',
+        dropPrivileges: true,
+        cpus: 1,
+      })
+    );
   });
 
   it('should return success when actual output matches expected output', async () => {

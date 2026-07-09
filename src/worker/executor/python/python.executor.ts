@@ -1,6 +1,5 @@
 import { promises as fs } from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+import path from 'path';
 import {
   LanguageExecutor,
   ExecutorInput,
@@ -11,22 +10,21 @@ import { DockerRunner } from '../docker.runner';
 
 export class PythonExecutor implements LanguageExecutor {
   public readonly language = 'python';
-  private readonly dockerImage = 'executor-python';
+  private readonly dockerImage = 'executor-python:latest';
 
   constructor(private readonly dockerRunner: DockerRunner) {}
 
-  public async execute(input: ExecutorInput): Promise<ExecutorOutput> {
-    const { code, timeoutMs, memoryMb, testCases } = input;
-
-    // Create an isolated temporary directory for this execution
-    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'python-executor-'));
-    const sourceFilePath = path.join(tmpDir, 'main.py');
-
-    let totalRuntimeMs = 0;
-    const testCaseResults: TestCaseResult[] = [];
+  async execute(input: ExecutorInput): Promise<ExecutorOutput> {
+    const { submissionId, code, timeoutMs, memoryMb, testCases } = input;
+    const tmpDir = await fs.mkdtemp(
+      path.join('/tmp/', `python-${submissionId}-`)
+    );
 
     try {
-      await fs.writeFile(sourceFilePath, code, 'utf-8');
+      await fs.writeFile(path.join(tmpDir, 'main.py'), code);
+
+      const testCaseResults: TestCaseResult[] = [];
+      let totalRuntimeMs = 0;
 
       for (const testCase of testCases) {
         const startTime = Date.now();
@@ -38,6 +36,12 @@ export class PythonExecutor implements LanguageExecutor {
           timeoutMs,
           memoryMb,
           stdin: testCase.input,
+          networkDisabled: true,
+          readOnly: true,
+          pidsLimit: 100,
+          user: '1000',
+          dropPrivileges: true,
+          cpus: 1,
         });
 
         const runtimeMs = Date.now() - startTime;
@@ -64,10 +68,9 @@ export class PythonExecutor implements LanguageExecutor {
       return {
         testCaseResults,
         totalRuntimeMs,
-        peakMemoryMb: 0, // DockerRunner currently does not expose peak memory usage
+        peakMemoryMb: 0,
       };
     } finally {
-      // Ensure absolute cleanup of the temporary environment
       await fs.rm(tmpDir, { recursive: true, force: true });
     }
   }
@@ -78,19 +81,12 @@ export class PythonExecutor implements LanguageExecutor {
     actualOutput: string,
     expectedOutput: string
   ): TestCaseResult['status'] {
-    if (timeoutTriggered) {
-      return 'time_limit_exceeded';
-    }
-    if (exitCode !== 0) {
-      return 'runtime_error';
-    }
+    if (timeoutTriggered) return 'time_limit_exceeded';
+    if (exitCode !== 0) return 'runtime_error';
 
-    // Normalize line endings and trim spaces for fair comparison
     const normalize = (str: string) => str.trim().replace(/\r\n/g, '\n');
-
-    if (normalize(actualOutput) === normalize(expectedOutput)) {
-      return 'success';
-    }
-    return 'wrong_answer';
+    return normalize(actualOutput) === normalize(expectedOutput)
+      ? 'success'
+      : 'wrong_answer';
   }
 }
