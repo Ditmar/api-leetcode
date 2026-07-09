@@ -1,0 +1,16 @@
+name: Stable Release
+
+on:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: release-master
+  cancel-in-progress: false
+
+jobs:
+  release:
+    uses: ./.github/workflows/release-reusable.yml
+    permissions:
+      contents: write
