@@ -8,13 +8,19 @@ export interface DockerRunOptions {
   tmpDir: string;
   timeoutMs: number;
   memoryMb: number;
-  stdin?: string;
   /**
    * Max number of processes/threads allowed inside the container.
    * Kept low to prevent fork bombs. Callers can tighten it further
    * per-language (e.g. C++ uses 32).
    */
   pidsLimit?: number;
+  /**
+   * Max number of CPUs the container may use (Docker's --cpus, accepts
+   * fractional values e.g. 0.5). Without this, a CPU-bound program that
+   * never triggers the wall-clock timeout can hog host cores and starve
+   * other concurrent submissions.
+   */
+  cpus?: number;
 }
 
 export interface DockerRunResult {
@@ -22,7 +28,21 @@ export interface DockerRunResult {
   stderr: string;
   exitCode: number;
   timedOut: boolean;
+  /**
+   * True when stdout or stderr hit MAX_OUTPUT_BYTES and the container
+   * was killed early. exitCode in this case is not meaningful (-1).
+   */
+  outputTruncated: boolean;
 }
+
+/**
+ * Hard cap on how much stdout/stderr we buffer in the host process per
+ * run. Without this, `while(true) printf(...)` in the user's program
+ * grows this string unbounded in Node's memory on the HOST — the
+ * container's --memory flag does not protect against this, since the
+ * buffer lives outside the container.
+ */
+const MAX_OUTPUT_BYTES = 1024 * 1024; // 1 MB per stream
 
 /**
  * Thin wrapper around the `docker` CLI that enforces the sandboxing
@@ -34,6 +54,14 @@ export interface DockerRunResult {
  *  - pid limit to prevent fork bombs
  *  - hard memory limit
  *  - hard wall-clock timeout, container is killed if it's exceeded
+ *
+ * Program input (stdin) is NOT piped live through `docker run`. Docker
+ * Desktop's Windows/WSL2 backend has intermittent hangs attaching
+ * interactive stdin (`-i`) when the writer is a spawned process rather
+ * than a real terminal (see PR #35 discussion). Instead, callers write
+ * the test-case input to a file inside `tmpDir` and have their run
+ * script redirect it (`< /code/input.txt`), which is deterministic on
+ * every platform and needs no stdin attach at all.
  */
 export class DockerRunner {
   async run(options: DockerRunOptions): Promise<DockerRunResult> {
@@ -43,8 +71,8 @@ export class DockerRunner {
       tmpDir,
       timeoutMs,
       memoryMb,
-      stdin = '',
       pidsLimit = 64,
+      cpus = 1,
     } = options;
 
     // Named container so the timeout handler can kill the container
@@ -55,7 +83,6 @@ export class DockerRunner {
     const args = [
       'run',
       '--rm',
-      '-i',
       '--name',
       containerName,
       '--network',
@@ -65,8 +92,16 @@ export class DockerRunner {
       'no-new-privileges',
       '--cap-drop',
       'ALL',
+      // Run as the same uid:gid that owns tmpDir on the host instead of
+      // the image's baked-in non-root user. This lets us keep tmpDir at
+      // its default 0700 (owner-only) instead of opening it to every
+      // user on the host system just so the container can read/write it.
+      '--user',
+      `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`,
       '--pids-limit',
       String(pidsLimit),
+      '--cpus',
+      String(cpus),
       '--memory',
       `${memoryMb}m`,
       '--memory-swap',
@@ -85,28 +120,44 @@ export class DockerRunner {
       let stdout = '';
       let stderr = '';
       let timedOut = false;
+      let outputTruncated = false;
       let settled = false;
 
-      const timer = setTimeout(() => {
-        timedOut = true;
-        // Kill the container (SIGKILL inside the daemon). `--rm` then
-        // removes it. Errors are ignored: the container may have just
-        // exited on its own between the timeout and this call.
+      // Shared by the timeout path and the output-limit path: both need
+      // to kill the container the same way (daemon-side kill, then the
+      // local docker CLI client so `close` fires promptly).
+      const killContainer = () => {
         const killer = spawn('docker', ['kill', containerName]);
         killer.on('error', () => {
           /* docker CLI missing — nothing else we can do here */
         });
-        // Also terminate the client process so `close` fires promptly.
         child.kill('SIGKILL');
+      };
+
+      const timer = setTimeout(() => {
+        timedOut = true;
+        killContainer();
       }, timeoutMs);
 
-      child.stdout.on('data', (chunk: Buffer) => {
-        stdout += chunk.toString('utf8');
-      });
+      const appendOutput = (stream: 'stdout' | 'stderr', chunk: Buffer) => {
+        if (outputTruncated) return; // already cut, ignore further data
 
-      child.stderr.on('data', (chunk: Buffer) => {
-        stderr += chunk.toString('utf8');
-      });
+        const current = stream === 'stdout' ? stdout : stderr;
+        if (Buffer.byteLength(current, 'utf8') >= MAX_OUTPUT_BYTES) {
+          outputTruncated = true;
+          killContainer();
+          return;
+        }
+
+        if (stream === 'stdout') {
+          stdout += chunk.toString('utf8');
+        } else {
+          stderr += chunk.toString('utf8');
+        }
+      };
+
+      child.stdout.on('data', (chunk: Buffer) => appendOutput('stdout', chunk));
+      child.stderr.on('data', (chunk: Buffer) => appendOutput('stderr', chunk));
 
       child.on('error', err => {
         if (settled) return;
@@ -124,19 +175,9 @@ export class DockerRunner {
           stderr,
           exitCode: code ?? -1,
           timedOut,
+          outputTruncated,
         });
       });
-
-      // If the container exits before consuming all stdin (e.g. it
-      // crashes immediately), writing would raise EPIPE — swallow it.
-      child.stdin.on('error', () => {
-        /* ignore EPIPE on early container exit */
-      });
-
-      if (stdin) {
-        child.stdin.write(stdin);
-      }
-      child.stdin.end();
     });
   }
 }

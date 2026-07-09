@@ -38,7 +38,8 @@ export type ExecutionStatus =
   | 'wrong_answer'
   | 'compile_error'
   | 'runtime_error'
-  | 'time_limit_exceeded';
+  | 'time_limit_exceeded'
+  | 'infra_error';
 
 export interface ExecutorOutput {
   status: ExecutionStatus;
@@ -46,6 +47,12 @@ export interface ExecutorOutput {
   totalRuntimeMs: number;
   peakMemoryMb: number;
   compileError?: string;
+  /**
+   * Populated only when status is 'infra_error': Docker unavailable,
+   * spawn ENOENT, unexpected disk errors, etc. This is not a verdict on
+   * the user's code, so it's kept separate from compileError.
+   */
+  infraError?: string;
 }
 
 /**

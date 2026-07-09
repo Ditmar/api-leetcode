@@ -4,6 +4,7 @@
  * The DockerRunner is fully mocked, so these tests run without Docker
  * and can be executed in the CI pipeline.
  */
+import fs from 'fs/promises';
 import { CppExecutor } from './cpp.executor';
 import type { DockerRunner, DockerRunResult } from '../docker-runner';
 import type { ExecutorInput } from '../executor.interface';
@@ -13,6 +14,7 @@ const okResult = (overrides: Partial<DockerRunResult> = {}): DockerRunResult => 
   stderr: '',
   exitCode: 0,
   timedOut: false,
+  outputTruncated: false,
   ...overrides,
 });
 
@@ -144,39 +146,74 @@ describe('CppExecutor', () => {
     expect(mockRun).toHaveBeenNthCalledWith(1, expect.objectContaining({ image: 'executor-cpp:latest', pidsLimit: 128 }));
    });
 
-  it('forwards the C++ sandbox hardening (pids-limit 32) and stdin to the DockerRunner', async () => {
+  it('forwards the C++ sandbox hardening (pids-limit 32) and writes the test-case input to a file instead of piping stdin live', async () => {
+    const writeFileSpy = jest.spyOn(fs, 'writeFile');
     mockRun
       .mockResolvedValueOnce(okResult())
       .mockResolvedValueOnce(okResult({ stdout: '5\n' }));
 
     await executor.execute(buildInput());
 
-    // Compile step: tightened pids limit, no stdin.
+    // Compile step: looser pids limit (g++ forks cc1plus/as/ld/collect2),
+    // no stdin.
     expect(mockRun).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
         image: 'executor-cpp:latest',
-        pidsLimit: 32,
+        pidsLimit: 128,
       })
     );
-    // Run step: same hardening plus the test-case stdin and per-test timeout.
+    // Run step: same hardening plus the per-test timeout. No `stdin` field
+    // anymore — docker run -i is unreliable on Docker Desktop for
+    // Windows/WSL2 when the writer isn't a real terminal (see
+    // docker-runner.ts), so input travels via a bind-mounted file instead.
     expect(mockRun).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         image: 'executor-cpp:latest',
         pidsLimit: 32,
-        stdin: '2 3',
         timeoutMs: 2000,
         memoryMb: 128,
       })
     );
+    expect(mockRun.mock.calls[1][0]).not.toHaveProperty('stdin');
+
+    // The test case's input ("2 3") gets written to input.txt, which
+    // run.sh redirects into the compiled binary's stdin.
+    expect(writeFileSpy).toHaveBeenCalledWith(
+      expect.stringContaining('input.txt'),
+      '2 3'
+    );
+
+    writeFileSpy.mockRestore();
   });
 
-  it('propagates DockerRunner failures instead of swallowing them', async () => {
+  it('resolves with "infra_error" instead of a rejected promise when DockerRunner fails', async () => {
     mockRun.mockRejectedValueOnce(new Error('docker daemon not running'));
 
-    await expect(executor.execute(buildInput())).rejects.toThrow(
-      'docker daemon not running'
-    );
+    const result = await executor.execute(buildInput());
+
+    expect(result.status).toBe('infra_error');
+    expect(result.infraError).toBe('docker daemon not running');
+    expect(result.testCaseResults).toHaveLength(0);
+  });
+
+  it('rejects source code larger than the configured size limit before touching Docker', async () => {
+    const oversizedCode = 'a'.repeat(101 * 1024); // > 100 KB
+    const input = buildInput({ code: oversizedCode });
+
+    await expect(executor.execute(input)).rejects.toThrow(/exceeds the/);
+    expect(mockRun).not.toHaveBeenCalled();
+  });
+
+  it('accepts source code right at the size limit', async () => {
+    mockRun
+      .mockResolvedValueOnce(okResult())
+      .mockResolvedValueOnce(okResult({ stdout: '5\n' }));
+
+    const codeAtLimit = 'a'.repeat(100 * 1024); // exactly 100 KB
+    const result = await executor.execute(buildInput({ code: codeAtLimit }));
+
+    expect(result.status).toBe('accepted');
   });
 });
