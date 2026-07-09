@@ -23,11 +23,15 @@ submissionsRouter.post(
   AuthMiddleware.validateToken,
   (req, res) => controller.create(req, res)
 );
-submissionsRouter.get('/submissions/:id', (req, res) =>
-  controller.getById(req, res)
+submissionsRouter.get(
+  '/submissions/:id',
+  AuthMiddleware.validateToken,
+  (req, res) => controller.getById(req, res)
 );
-submissionsRouter.get('/users/:id/submissions', (req, res) =>
-  controller.getByUserId(req, res)
+submissionsRouter.get(
+  '/users/:id/submissions',
+  AuthMiddleware.validateToken,
+  (req, res) => controller.getByUserId(req, res)
 );
 
 export { submissionsRouter };

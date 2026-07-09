@@ -10,6 +10,22 @@ const DEFAULT_MEMORY_MB = 128;
 
 export class DefaultExecutionWorker implements ExecutionWorker {
   async process(submission: Submission): Promise<Submission> {
+    const normalizedCode = submission.getCode().trim();
+
+    if (!normalizedCode) {
+      return new Submission(
+        submission.getId(),
+        submission.getProblemId(),
+        submission.getUserId(),
+        submission.getLanguage(),
+        submission.getCode(),
+        'rejected',
+        null,
+        null,
+        submission.getCreatedAt()
+      );
+    }
+
     // Temporary stub while the execution engine is not wired up.
     return new Submission(
       submission.getId(),

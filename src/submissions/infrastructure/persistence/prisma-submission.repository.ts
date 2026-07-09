@@ -38,10 +38,20 @@ export class PrismaSubmissionRepository extends SubmissionRepository {
     return raw ? this.toDomain(raw) : null;
   }
 
-  async findByUserId(userId: string): Promise<Submission[]> {
+  async findByUserId(
+    userId: string,
+    page = 1,
+    limit = 20
+  ): Promise<Submission[]> {
+    const safePage = page > 0 ? page : 1;
+    const safeLimit = limit > 0 ? limit : 20;
+    const skip = (safePage - 1) * safeLimit;
+
     const raws = await this.prisma.problemSubmission.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
+      skip,
+      take: safeLimit,
     });
     return raws.map(raw => this.toDomain(raw));
   }
