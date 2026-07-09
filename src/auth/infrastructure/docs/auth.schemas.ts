@@ -5,7 +5,7 @@ export const authSchemas = {
     properties: {
       name: {
         type: 'string',
-        example: 'Juan Pérez',
+        example: 'Juan Perez',
       },
       email: {
         type: 'string',
@@ -67,7 +67,7 @@ export const authSchemas = {
       },
       name: {
         type: 'string',
-        example: 'Juan Pérez',
+        example: 'Juan Perez',
       },
       email: {
         type: 'string',

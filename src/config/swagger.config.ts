@@ -3,6 +3,11 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
 import { authSchemas } from '../auth/infrastructure/docs/auth.schemas';
+import { problemSchemas } from '../problems/infrastructure/docs/problem.schema';
+import { contestSchemas } from '../contests/infrastructure/docs/contests.schema';
+import { courseSchemas } from '../course/infrastructure/docs/course.schema';
+import { testSchemas } from '../tests/infraestructure/docs/tests.schema';
+import { userSchemas } from '../user/infrastructure/docs/user.schema';
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -10,7 +15,7 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: 'OpenAPI API',
       version: '1.0.0',
-      description: 'Documentación de la API',
+      description: 'API Documentation',
     },
 
     servers: [
@@ -29,6 +34,11 @@ const options: swaggerJsdoc.Options = {
       },
       schemas: {
         ...authSchemas,
+        ...problemSchemas,
+        ...contestSchemas,
+        ...courseSchemas,
+        ...testSchemas,
+        ...userSchemas,
       },
     },
 
@@ -39,7 +49,9 @@ const options: swaggerJsdoc.Options = {
     ],
   },
 
-  apis: ['./src/**/*.ts'],
+  apis: [
+    process.env.NODE_ENV === 'production' ? './dist/**/*.js' : './src/**/*.ts',
+  ],
 };
 
 const swaggerSpec = swaggerJsdoc(options);

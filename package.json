@@ -1,6 +1,6 @@
 {
   "name": "api-leetcode",
-  "version": "0.0.4-rc.12",
+  "version": "0.0.4-rc.14",
   "description": "Express API with TypeScript",
   "main": "dist/index.js",
   "scripts": {

@@ -18,7 +18,10 @@ const app: Application = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-configureSwagger(app);
+
+if (config.app.nodeEnv !== 'production') {
+  configureSwagger(app);
+}
 
 // Public routes
 app.get('/', (req: Request, res: Response) => {
@@ -58,7 +61,11 @@ app.use('*', (req: Request, res: Response) => {
 
 const server = app.listen(config.app.port, () => {
   logger.info(`Server is running on port ${config.app.port}`);
-  logger.info(`Swagger is running on port ${config.app.port}/api-docs`);
+
+  if (config.app.nodeEnv !== 'production') {
+    logger.info(`Swagger is running on port ${config.app.port}/api-docs`);
+  }
+
   logger.info(`Environment: ${config.app.nodeEnv}`);
 });
 
