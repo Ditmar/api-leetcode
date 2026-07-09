@@ -11,7 +11,7 @@ import { ExploreController } from './controllers/explore.controller';
 
 import { authMiddleware } from '../../share/infrastructure/middleware/auth.middleware';
 import { prisma as getPrismaClient } from '../../share/infrastructure/prisma-client';
-import { PrismaUserRepository } from './persistence/prisma-user.repository';
+import { PrismaUserRepository } from '../../user/infrastructure/persistence/prisma-user.repository';
 
 const exploreRouter = Router();
 

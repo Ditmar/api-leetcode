@@ -16,27 +16,11 @@ export class ExploreController {
 
   getTopics = async (req: Request, res: Response) => {
     try {
-      const { category, difficulty, page, limit } = req.query;
-
-      const pageNumber = Number(page);
-      const limitNumber = Number(limit);
-
-      if (
-        (page !== undefined &&
-          (!Number.isInteger(pageNumber) || pageNumber <= 0)) ||
-        (limit !== undefined &&
-          (!Number.isInteger(limitNumber) || limitNumber <= 0))
-      ) {
-        return res.status(400).json({
-          message: "'page' and 'limit' must be positive integers.",
-        });
-      }
+      const { category, difficulty } = req.query;
 
       const topics = await this.getTopicsUseCase.execute({
         category: category as string,
         difficulty: difficulty as string,
-        page: page !== undefined ? pageNumber : 1,
-        limit: limit !== undefined ? limitNumber : 10,
       });
 
       return res.json(topics);
