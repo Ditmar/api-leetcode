@@ -10,7 +10,6 @@ import {
 } from '../executor.interface';
 
 export class JavascriptExecutor implements LanguageExecutor {
-  // 1. Implementación formal de la propiedad requerida por la interfaz
   public readonly language = 'javascript' as const;
 
   constructor(private readonly dockerRunner: DockerRunner) {}
@@ -19,7 +18,6 @@ export class JavascriptExecutor implements LanguageExecutor {
     const testCaseResults: TestCaseResult[] = [];
     let totalRuntimeMs = 0;
 
-    // 2. Uso de mkdtemp para evitar colisiones de archivos concurrentes
     const baseDir = join(tmpdir(), `sub-${input.submissionId}-`);
     const workspaceDir = await mkdtemp(baseDir);
     const codeFilePath = join(workspaceDir, 'index.js');
@@ -30,11 +28,9 @@ export class JavascriptExecutor implements LanguageExecutor {
       for (const testCase of input.testCases) {
         const startTime = Date.now();
 
-        // 3. Corrección del comando: Solo pasamos 'index.js'
-        // El script run.sh ya lo ejecutará con node
         const runOutput = await this.dockerRunner.run({
           image: 'node:20-alpine',
-          command: ['index.js'],
+          command: ['node', 'index.js'],
           tmpDir: workspaceDir,
           timeoutMs: input.timeoutMs,
           memoryMb: input.memoryMb,
