@@ -1,33 +1,40 @@
 import { join } from 'path';
-import { mkdir, writeFile, rm } from 'fs/promises';
+import { mkdtemp, writeFile, rm } from 'fs/promises';
+import { tmpdir } from 'os';
 import { DockerRunner } from '../docker.runner';
 import {
+  LanguageExecutor,
   ExecutorInput,
   ExecutorOutput,
   TestCaseResult,
 } from '../executor.interface';
 
-export class JavascriptExecutor {
+export class JavascriptExecutor implements LanguageExecutor {
+  // 1. Implementación formal de la propiedad requerida por la interfaz
+  public readonly language = 'javascript' as const;
+
   constructor(private readonly dockerRunner: DockerRunner) {}
 
   async execute(input: ExecutorInput): Promise<ExecutorOutput> {
     const testCaseResults: TestCaseResult[] = [];
     let totalRuntimeMs = 0;
 
-    // Directorio de trabajo aislado por envío
-    const workspaceDir = `/tmp/submissions/${input.submissionId}`;
+    // 2. Uso de mkdtemp para evitar colisiones de archivos concurrentes
+    const baseDir = join(tmpdir(), `sub-${input.submissionId}-`);
+    const workspaceDir = await mkdtemp(baseDir);
     const codeFilePath = join(workspaceDir, 'index.js');
 
     try {
-      await mkdir(workspaceDir, { recursive: true });
       await writeFile(codeFilePath, input.code);
 
       for (const testCase of input.testCases) {
         const startTime = Date.now();
 
+        // 3. Corrección del comando: Solo pasamos 'index.js'
+        // El script run.sh ya lo ejecutará con node
         const runOutput = await this.dockerRunner.run({
           image: 'node:20-alpine',
-          command: ['node', 'index.js'],
+          command: ['index.js'],
           tmpDir: workspaceDir,
           timeoutMs: input.timeoutMs,
           memoryMb: input.memoryMb,

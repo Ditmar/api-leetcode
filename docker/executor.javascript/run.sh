@@ -1,6 +1,5 @@
 #!/bin/sh
-# Este script recibe el archivo a ejecutar.
-# El orquestador DockerRunner inyectará los inputs del test case a través de stdin (entrada estándar)
+# Este script ejecuta el comando recibido por parámetros directamente.
+# El DockerRunner inyectará el comando completo, ej: ['node', 'index.js']
 
-# Ejecutamos el archivo de node (en este caso index.js que se pasará como argumento)
-node "$@"
+exec "$@"
