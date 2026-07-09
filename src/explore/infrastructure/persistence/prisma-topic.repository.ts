@@ -157,7 +157,6 @@ export class PrismaTopicRepository implements TopicRepository {
   async getStats(userId: string): Promise<ExploreStats> {
     try {
       const [totalTopics, totalProblems, acceptedProblems] = await Promise.all([
-        // Total de topics activos
         this.prisma.topic.count({
           where: { isActive: true },
         }),
