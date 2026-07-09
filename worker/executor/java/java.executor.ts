@@ -19,9 +19,9 @@ javac -d /code /code/Solution.java
 exit $?
 `;
 
-const RUN_SCRIPT = `#!/bin/sh
-java -cp /code Solution
-exit $?
+//const RUN_SCRIPT = `#!/bin/sh java -cp /code Solution exit $?`;
+const RUN_SCRIPT = (memoryMb: number): string => `#!/bin/sh
+exec java -Xmx${memoryMb}m -cp /code Solution
 `;
 
 export class JavaExecutor implements LanguageExecutor {
@@ -38,7 +38,7 @@ export class JavaExecutor implements LanguageExecutor {
 
     try {
 
-      await fs.chmod(tmpDir, 0o777);
+      await fs.chmod(tmpDir, 1001);
 
       await fs.writeFile(path.join(tmpDir, 'Solution.java'), input.code, {
         mode: 0o644,
@@ -46,7 +46,7 @@ export class JavaExecutor implements LanguageExecutor {
       await fs.writeFile(path.join(tmpDir, 'compile.sh'), COMPILE_SCRIPT, {
         mode: 0o755,
       });
-      await fs.writeFile(path.join(tmpDir, 'run.sh'), RUN_SCRIPT, {
+      await fs.writeFile(path.join(tmpDir, 'run.sh'), RUN_SCRIPT(input.memoryMb), {
         mode: 0o755,
       });
 
@@ -127,7 +127,7 @@ export class JavaExecutor implements LanguageExecutor {
         status: overallStatus,
         testCaseResults,
         totalRuntimeMs,
-        peakMemoryMb: input.memoryMb,
+        peakMemoryMb: 0,
       };
     } finally {
       await fs.rm(tmpDir, { recursive: true, force: true });

@@ -1,6 +1,8 @@
 import { spawn } from 'child_process';
 import { randomUUID } from 'crypto';
 
+const MAX_OUTPUT_BYTES = 1 * 1024 * 1024; // 1MB per stream
+
 export interface DockerRunOptions {
   image: string;
   command: string[];
@@ -9,6 +11,7 @@ export interface DockerRunOptions {
   memoryMb: number;
   stdin?: string;
   pidsLimit?: number;
+  cpus?: number;
 }
 
 export interface DockerRunResult {
@@ -16,6 +19,8 @@ export interface DockerRunResult {
   stderr: string;
   exitCode: number;
   timedOut: boolean;
+  stdoutTruncated?: boolean;
+  stderrTruncated?: boolean;
 }
 
 export class DockerRunner {
@@ -28,6 +33,7 @@ export class DockerRunner {
       memoryMb,
       stdin = '',
       pidsLimit = 64,
+      cpus = 1,
     } = options;
 
     const containerName = `executor-${randomUUID()}`;
@@ -47,10 +53,14 @@ export class DockerRunner {
       'ALL',
       '--pids-limit',
       String(pidsLimit),
+      '--cpus',
+      String(cpus),
       '--memory',
       `${memoryMb}m`,
       '--memory-swap',
       `${memoryMb}m`,
+      '-e',
+      `MEMORY_MB=${memoryMb}`,
       '-v',
       `${tmpDir}:/code:rw`,
       '--tmpfs',
@@ -64,6 +74,8 @@ export class DockerRunner {
 
       let stdout = '';
       let stderr = '';
+      let stdoutTruncated = false;
+      let stderrTruncated = false;
       let timedOut = false;
       let settled = false;
 
@@ -76,11 +88,21 @@ export class DockerRunner {
       }, timeoutMs);
 
       child.stdout.on('data', (chunk: Buffer) => {
+        if (stdoutTruncated) return;
         stdout += chunk.toString('utf8');
+        if (stdout.length > MAX_OUTPUT_BYTES) {
+          stdout = stdout.slice(0, MAX_OUTPUT_BYTES);
+          stdoutTruncated = true;
+        }
       });
 
       child.stderr.on('data', (chunk: Buffer) => {
+        if (stderrTruncated) return;
         stderr += chunk.toString('utf8');
+        if (stderr.length > MAX_OUTPUT_BYTES) {
+          stderr = stderr.slice(0, MAX_OUTPUT_BYTES);
+          stderrTruncated = true;
+        }
       });
 
       child.on('error', err => {
@@ -99,6 +121,8 @@ export class DockerRunner {
           stderr,
           exitCode: code ?? -1,
           timedOut,
+          stdoutTruncated,
+          stderrTruncated,
         });
       });
 
