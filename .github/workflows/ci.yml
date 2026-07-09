@@ -1,13 +1,21 @@
 name: Build and Push Docker Image 
-on:
+on: 
+  pull_request:
+    branches:
+      - next
+      - master
+    
   push:
     branches:
-      - '**'
+       - next
+       - master
+
   workflow_dispatch:
 jobs:
-  build-and-push:
+  validate: 
     runs-on: ubuntu-latest
-    if: github.ref_name == 'next' || github.ref_name == 'master'
+    timeout-minutes: 15
+    if: github.event_name == 'pull_request' 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,6 +31,28 @@ jobs:
       - name: Prisma generate
         run: npx prisma generate
       - name: Build app
+        run: npm run build
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Set DATABASE_URL environment variable
+        run: echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV
+      - name: Prisma generate
+        run: npx prisma generate
+      - name: Build app 
         run: npm run build
       - name: Get package json version
         run: echo "VERSION=$(node -p -e "require('./package.json').version")" >> $GITHUB_ENV
