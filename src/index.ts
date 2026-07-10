@@ -51,6 +51,7 @@ app.use('/api/tests', testRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/contests', contestRoutes);
 app.use('/api/problems', problemsRouter);
+app.use('/api', submissionsRouter);
 
 app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
