@@ -14,7 +14,7 @@ export class PrismaTopicRepository implements TopicRepository {
     problemId: string
   ): Promise<void> {
     const topicProblems = await this.prisma.topicProblem.findMany({
-      where: { problemId, isActive: true },
+      where: { problemId },
       select: { topicId: true },
     });
 
