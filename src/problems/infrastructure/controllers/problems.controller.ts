@@ -59,7 +59,7 @@ export class ProblemsController {
   async getById(req: Request, res: Response): Promise<void> {
     try {
       const id = req.params.id ?? '';
-      const result = await this.getProblemById.execute(id);
+      const result = await this.getProblemById.execute(id.toString());
       res.json(result);
     } catch (error) {
       if (error instanceof Error && error.message.includes('not found')) {
@@ -73,7 +73,7 @@ export class ProblemsController {
   async getBySlug(req: Request, res: Response): Promise<void> {
     try {
       const slug = req.params.slug ?? '';
-      const result = await this.getProblemBySlug.execute(slug);
+      const result = await this.getProblemBySlug.execute(slug.toString());
       res.json(result);
     } catch (error) {
       if (error instanceof Error && error.message.includes('not found')) {
@@ -152,7 +152,7 @@ export class ProblemsController {
   async update(req: Request, res: Response): Promise<void> {
     try {
       const id = req.params.id ?? '';
-      const result = await this.updateProblem.execute(id, req.body);
+      const result = await this.updateProblem.execute(id.toString(), req.body);
       res.json(result);
     } catch (error) {
       if (error instanceof Error && error.message.includes('not found')) {
@@ -166,12 +166,12 @@ export class ProblemsController {
   async remove(req: Request, res: Response): Promise<void> {
     try {
       const id = req.params.id ?? '';
-      const existing = await this.getProblemById.execute(id);
+      const existing = await this.getProblemById.execute(id.toString());
       if (!existing) {
         res.status(404).json({ message: `Problem with id ${id} not found` });
         return;
       }
-      await this.problemRepository.softDelete(id);
+      await this.problemRepository.softDelete(id.toString());
       res.status(204).send();
     } catch (error) {
       if (error instanceof Error && error.message.includes('not found')) {
