@@ -34,14 +34,123 @@ const authController = new ExpressAuthController(
 const authRoutes = Router();
 
 // Public routes
+
+/**
+ * @swagger
+ * /api/auth/signup:
+ *   post:
+ *     summary: Registrar un nuevo usuario
+ *     description: Crea una nueva cuenta de usuario.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SignupRequest'
+ *     responses:
+ *       201:
+ *         description: Usuario registrado correctamente
+ *       400:
+ *         description: Datos inválidos
+ *       409:
+ *         description: El usuario ya existe
+ */
 authRoutes.post('/signup', (req, res) => authController.signup(req, res));
+
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Iniciar sesión
+ *     description: Autentica un usuario y devuelve un Access Token y Refresh Token.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Inicio de sesión exitoso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       401:
+ *         description: Credenciales inválidas
+ */
 authRoutes.post('/login', (req, res) => authController.login(req, res));
+
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Renovar Access Token
+ *     description: Genera un nuevo Access Token utilizando un Refresh Token válido.
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshTokenRequest'
+ *     responses:
+ *       200:
+ *         description: Token renovado correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       401:
+ *         description: Refresh Token inválido
+ */
 authRoutes.post('/refresh', (req, res) =>
   authController.refreshToken(req, res)
 );
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Cerrar sesión
+ *     description: Invalida el Refresh Token del usuario.
+ *     tags:
+ *       - Auth
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Sesión cerrada correctamente
+ *       401:
+ *         description: No autorizado
+ */
 authRoutes.post('/logout', (req, res) => authController.logout(req, res));
 
-// Protected routes
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Obtener usuario autenticado
+ *     description: Devuelve la información del usuario autenticado mediante JWT.
+ *     tags:
+ *       - Auth
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Información del usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UserResponse'
+ *       401:
+ *         description: Token inválido o expirado
+ */
 authRoutes.get('/me', AuthMiddleware.validateToken, (req, res) =>
   authController.getMe(req, res)
 );

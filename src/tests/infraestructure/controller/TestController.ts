@@ -74,7 +74,7 @@ export class TestController {
         return;
       }
 
-      if (!this.isValidUUID(id)) {
+      if (!this.isValidUUID(id.toString())) {
         res.status(400).json({
           success: false,
           error: 'Invalid test ID format',
@@ -82,7 +82,7 @@ export class TestController {
         return;
       }
 
-      const result = await services.tests.getById.execute(id);
+      const result = await services.tests.getById.execute(id.toString());
       res.status(200).json({
         success: true,
         data: result,
@@ -111,7 +111,7 @@ export class TestController {
         return;
       }
 
-      if (!this.isValidUUID(id)) {
+      if (!this.isValidUUID(id.toString())) {
         res.status(400).json({
           success: false,
           error: 'Invalid test ID format',
@@ -119,7 +119,7 @@ export class TestController {
         return;
       }
 
-      const result = await services.tests.start.execute(id, userId);
+      const result = await services.tests.start.execute(id.toString(), userId);
       res.status(201).json({
         success: true,
         data: result,
@@ -153,7 +153,7 @@ export class TestController {
         return;
       }
 
-      if (!this.isValidUUID(id)) {
+      if (!this.isValidUUID(id.toString())) {
         res.status(400).json({
           success: false,
           error: 'Invalid test ID format',
@@ -178,7 +178,7 @@ export class TestController {
       }
 
       const result = await services.tests.getQuestions.execute(
-        id,
+        id.toString(),
         sessionId,
         userId as unknown as string
       );
@@ -217,7 +217,7 @@ export class TestController {
         return;
       }
 
-      if (!this.isValidUUID(id)) {
+      if (!this.isValidUUID(id.toString())) {
         res.status(400).json({
           success: false,
           error: 'Invalid test ID format',
@@ -310,7 +310,7 @@ export class TestController {
       }
 
       const result = await services.tests.submit.execute(
-        id,
+        id.toString(),
         sessionId,
         answers,
         userId as unknown as string
