@@ -13,6 +13,7 @@ import { courseRoutes } from './course/infrastructure/routes/course-routes';
 import { contestRoutes } from './contests/infrastructure/contests.router';
 import { problemsRouter } from './problems/infrastructure/problems.router';
 import { configureSwagger } from './config/swagger.config';
+import { submissionsRouter } from './submissions/infrastructure/submissions.router';
 
 const app: Application = express();
 
