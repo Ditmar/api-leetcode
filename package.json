@@ -11,13 +11,15 @@
     "lint:fix": "npx eslint \"src/**/*.ts\" --fix",
     "format": "npx prettier --write src/**/*.ts",
     "prepare": "npx husky install",
-    "test": "jest",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "db:up": "docker compose -f ./local-database/database.yaml up -d",
-    "prisma:migrate": "npx prisma migrate dev",
-    "release": "release-it",
-    "release:rc": "release-it --preRelease=rc"
+    "prisma:migrate": "npx prisma migrate dev"
   },
-  "keywords": ["express", "typescript", "api"],
+  "keywords": [
+    "express",
+    "typescript",
+    "api"
+  ],
   "author": "",
   "license": "ISC",
   "lint-staged": {
@@ -30,11 +32,9 @@
     "node": ">=22.20.0"
   },
   "devDependencies": {
-    "@release-it/conventional-changelog": "^11.0.1",
     "@types/bcrypt": "6.0.0",
     "@types/config": "^3.3.5",
     "@types/express": "5.0.5",
-    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "9.0.10",
     "@types/node": "24.10.0",
     "@types/pino": "7.0.5",
@@ -47,13 +47,10 @@
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "5.5.4",
     "husky": "9.1.7",
-    "jest": "^29.7.0",
     "lint-staged": "16.2.6",
     "nodemon": "3.1.10",
     "prettier": "3.6.2",
     "prisma": "6.19.0",
-    "release-it": "^20.2.1",
-    "ts-jest": "^29.2.5",
     "ts-node": "10.9.2",
     "tsc-alias": "1.8.16",
     "tsconfig-paths": "4.2.0",
