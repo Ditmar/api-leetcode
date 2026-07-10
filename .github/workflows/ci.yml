@@ -68,4 +68,5 @@ jobs:
         with:
           context: .
           push: true
+          provenance: false
           tags: ditmar/api-leetcode:${{ env.VERSION }}
