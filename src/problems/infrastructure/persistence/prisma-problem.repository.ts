@@ -1,5 +1,8 @@
 import type { PrismaClient } from '@prisma/client';
-import type { ProblemFilters } from '../../domain/repositories/problem.repository';
+import type {
+  ProblemFilters,
+  TopicInfo,
+} from '../../domain/repositories/problem.repository';
 import { ProblemRepository } from '../../domain/repositories/problem.repository';
 import {
   Problem,
@@ -8,6 +11,18 @@ import {
 } from '../../domain/entities/problem.entity';
 
 export class PrismaProblemRepository extends ProblemRepository {
+  override findTopicsByProblemId(): Promise<TopicInfo[]> {
+    throw new Error('Method not implemented.');
+  }
+  override findProblemIdsByTopicId(): Promise<string[]> {
+    throw new Error('Method not implemented.');
+  }
+  override findSolvedProblemIdsByUserAndTopic(): Promise<string[]> {
+    throw new Error('Method not implemented.');
+  }
+  override updateUserProgress?(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
   constructor(private readonly prisma: PrismaClient) {
     super();
   }
