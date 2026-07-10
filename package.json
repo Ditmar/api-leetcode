@@ -17,7 +17,11 @@
     "release": "release-it",
     "release:rc": "release-it --preRelease=rc"
   },
-  "keywords": ["express", "typescript", "api"],
+  "keywords": [
+    "express",
+    "typescript",
+    "api"
+  ],
   "author": "",
   "license": "ISC",
   "lint-staged": {
@@ -36,7 +40,7 @@
     "@types/express": "5.0.5",
     "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "9.0.10",
-    "@types/node": "24.10.0",
+    "@types/node": "^24.10.0",
     "@types/pino": "7.0.5",
     "@types/uuid": "10.0.0",
     "@typescript-eslint/eslint-plugin": "8.46.3",

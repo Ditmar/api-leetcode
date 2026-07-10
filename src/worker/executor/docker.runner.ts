@@ -22,6 +22,11 @@ export interface DockerRunOutput {
   timeoutTriggered?: boolean;
 }
 
+/**
+ * Infrastructure Mock for Docker execution.
+ * NOTE: This is a temporary stub. Security constraints (timeout, network, memory)
+ * will be implemented in ticket API-EXE-001.
+ */
 export class DockerRunner {
   async run(input: DockerRunInput): Promise<DockerRunOutput> {
     const {
@@ -51,7 +56,6 @@ export class DockerRunner {
     if (cpus > 0) dockerArgs.push('--cpus', cpus.toString());
 
     dockerArgs.push('-v', `${tmpDir}:/workspace`, '-w', '/workspace');
-
     dockerArgs.push(image, ...command);
 
     return new Promise((resolve, reject) => {
@@ -66,12 +70,8 @@ export class DockerRunner {
         child.kill('SIGKILL');
       }, timeoutMs);
 
-      child.stdout.on('data', data => {
-        stdout += data.toString();
-      });
-      child.stderr.on('data', data => {
-        stderr += data.toString();
-      });
+      child.stdout.on('data', data => { stdout += data.toString(); });
+      child.stderr.on('data', data => { stderr += data.toString(); });
 
       if (stdin) {
         child.stdin.write(stdin);
