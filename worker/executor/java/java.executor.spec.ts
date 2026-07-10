@@ -1,3 +1,5 @@
+import fs from 'fs/promises';
+import path from 'path';
 import { JavaExecutor } from './java.executor';
 import type { DockerRunner, DockerRunResult } from '../docker-runner';
 import type { ExecutorInput } from '../executor.interface';
@@ -9,6 +11,7 @@ const okResult = (
   stderr: '',
   exitCode: 0,
   timedOut: false,
+  outputTruncated: false,
   ...overrides,
 });
 
@@ -35,8 +38,8 @@ describe('JavaExecutor', () => {
 
   it('returns "accepted" when compilation succeeds and output matches', async () => {
     mockRun
-      .mockResolvedValueOnce(okResult()) // compile step
-      .mockResolvedValueOnce(okResult({ stdout: '5\n' })); // run step
+      .mockResolvedValueOnce(okResult())
+      .mockResolvedValueOnce(okResult({ stdout: '5\n' })); 
 
     const result = await executor.execute(buildInput());
 
@@ -66,8 +69,8 @@ describe('JavaExecutor', () => {
 
   it('maps a non-zero exit code after a successful compile to "runtime_error"', async () => {
     mockRun
-      .mockResolvedValueOnce(okResult()) // compile ok
-      .mockResolvedValueOnce(okResult({ exitCode: 1 })); // uncaught exception
+      .mockResolvedValueOnce(okResult())
+      .mockResolvedValueOnce(okResult({ exitCode: 1 }));
 
     const result = await executor.execute(buildInput());
 
@@ -79,7 +82,7 @@ describe('JavaExecutor', () => {
 
   it('maps a killed container to "time_limit_exceeded"', async () => {
     mockRun
-      .mockResolvedValueOnce(okResult()) // compile ok
+      .mockResolvedValueOnce(okResult())
       .mockResolvedValueOnce(okResult({ exitCode: 137, timedOut: true }));
 
     const result = await executor.execute(buildInput());
@@ -91,7 +94,7 @@ describe('JavaExecutor', () => {
 
   it('returns "wrong_answer" when the program runs fine but output differs', async () => {
     mockRun
-      .mockResolvedValueOnce(okResult()) // compile ok
+      .mockResolvedValueOnce(okResult())
       .mockResolvedValueOnce(okResult({ stdout: '6\n' }));
 
     const result = await executor.execute(buildInput());
@@ -111,9 +114,9 @@ describe('JavaExecutor', () => {
     });
 
     mockRun
-      .mockResolvedValueOnce(okResult()) // compile ok
-      .mockResolvedValueOnce(okResult({ stdout: '5\n' })) // tc-1 passes
-      .mockResolvedValueOnce(okResult({ stdout: '31\n' })); // tc-2 fails
+      .mockResolvedValueOnce(okResult()) 
+      .mockResolvedValueOnce(okResult({ stdout: '5\n' })) 
+      .mockResolvedValueOnce(okResult({ stdout: '31\n' })); 
 
     const result = await executor.execute(input);
 
@@ -123,35 +126,50 @@ describe('JavaExecutor', () => {
     expect(result.testCaseResults[1]?.passed).toBe(false);
   });
 
-  it('forwards stdin and the per-test timeout/memory to the DockerRunner', async () => {
+  it('writes the test-case input to input.txt and forwards the per-test timeout/memory/pidsLimit', async () => {
+    let capturedInput = '';
     mockRun
-      .mockResolvedValueOnce(okResult())
-      .mockResolvedValueOnce(okResult({ stdout: '5\n' }));
+      .mockResolvedValueOnce(okResult()) 
+      .mockImplementationOnce(async (options: { tmpDir: string }) => {
+        capturedInput = await fs.readFile(
+          path.join(options.tmpDir, 'input.txt'),
+          'utf-8'
+        );
+        return okResult({ stdout: '5\n' });
+      });
 
-    await executor.execute(buildInput());
+    const result = await executor.execute(buildInput());
 
     expect(mockRun).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
         image: 'executor-java:latest',
+        timeoutMs: 15_000,
+        pidsLimit: 128,
       })
     );
+
     expect(mockRun).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         image: 'executor-java:latest',
-        stdin: '2 3',
         timeoutMs: 2000,
         memoryMb: 128,
+        pidsLimit: 48,
       })
     );
+
+    expect(capturedInput).toBe('2 3');
+    expect(result.status).toBe('accepted');
   });
 
-  it('propagates DockerRunner failures instead of swallowing them', async () => {
+  it('maps a DockerRunner/infrastructure failure to "infra_error" instead of throwing', async () => {
     mockRun.mockRejectedValueOnce(new Error('docker daemon not running'));
 
-    await expect(executor.execute(buildInput())).rejects.toThrow(
-      'docker daemon not running'
-    );
+    const result = await executor.execute(buildInput());
+
+    expect(result.status).toBe('infra_error');
+    expect(result.infraError).toBe('docker daemon not running');
+    expect(result.testCaseResults).toHaveLength(0);
   });
 });

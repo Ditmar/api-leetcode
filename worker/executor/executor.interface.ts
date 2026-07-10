@@ -36,7 +36,8 @@ export type ExecutionStatus =
   | 'wrong_answer'
   | 'compile_error'
   | 'runtime_error'
-  | 'time_limit_exceeded';
+  | 'time_limit_exceeded'
+  | 'infra_error';
 
 export interface ExecutorOutput {
   status: ExecutionStatus;
@@ -44,6 +45,7 @@ export interface ExecutorOutput {
   totalRuntimeMs: number;
   peakMemoryMb: number;
   compileError?: string;
+  infraError?: string;
 }
 
 export interface LanguageExecutor {
