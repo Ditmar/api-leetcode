@@ -41,7 +41,7 @@ export class PrismaContestRepository implements ContestRepository {
       take: params.take || 10,
     });
 
-    return contests.map((c: PrismaContest) => this.mapToDomain(c));
+    return contests.map(c => this.mapToDomain(c));
   }
 
   async getById(id: string): Promise<Contest | null> {
