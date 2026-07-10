@@ -12,12 +12,17 @@ import { testRoutes } from './tests/infraestructure/routes/test-routes';
 import { courseRoutes } from './course/infrastructure/routes/course-routes';
 import { contestRoutes } from './contests/infrastructure/contests.router';
 import { problemsRouter } from './problems/infrastructure/problems.router';
+import { configureSwagger } from './config/swagger.config';
 import { submissionsRouter } from './submissions/infrastructure/submissions.router';
 
 const app: Application = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+if (config.app.nodeEnv !== 'production') {
+  configureSwagger(app);
+}
 
 // Public routes
 app.get('/', (req: Request, res: Response) => {
@@ -58,6 +63,11 @@ app.use('*', (req: Request, res: Response) => {
 
 const server = app.listen(config.app.port, () => {
   logger.info(`Server is running on port ${config.app.port}`);
+
+  if (config.app.nodeEnv !== 'production') {
+    logger.info(`Swagger is running on port ${config.app.port}/api-docs`);
+  }
+
   logger.info(`Environment: ${config.app.nodeEnv}`);
 });
 
