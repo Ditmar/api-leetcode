@@ -1,0 +1,52 @@
+name: Release (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      preRelease:
+        description: "Identificador de prerelease (ej. 'rc'). Vacío para release estable."
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: "!startsWith(github.event.head_commit.message, 'chore: release')"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Fetch all tags
+        run: git fetch --tags
+
+      - name: Generate preRelease
+        if: inputs.preRelease != ''
+        run: npm run release:rc
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Stable Release
+        if: inputs.preRelease == ''
+        run: npm run release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
