@@ -5,7 +5,6 @@ import { authMiddleware } from '../../../share/infrastructure/middleware/auth.mi
 const router = Router();
 const controller = new TestController();
 
-router.get('/', (req, res) => controller.getTests(req, res));
 /**
  * @swagger
  * /api/tests:
