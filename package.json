@@ -13,7 +13,7 @@
     "prepare": "npx husky install",
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:up": "docker compose -f ./local-database/database.yaml up -d",
-    "prisma:migrate": "npx prisma migrate dev --name init"
+    "prisma:migrate": "npx prisma migrate dev"
   },
   "keywords": [
     "express",
