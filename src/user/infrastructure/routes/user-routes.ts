@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { ExpressUserController } from '../controller/express-user-controller';
+import { asyncHandler } from '../../../share/infrastructure/middleware/async-handler';
+
 const userController = new ExpressUserController();
 const userRoutes = Router();
 
@@ -27,7 +29,10 @@ const userRoutes = Router();
  *                 data: { type: array, items: { $ref: '#/components/schemas/UserResponse' } }
  *                 pagination: { $ref: '#/components/schemas/PaginationMeta' }
  */
-userRoutes.get('/', (req, res) => userController.getAllUsers(req, res));
+userRoutes.get(
+  '/',
+  asyncHandler((req, res) => userController.getAllUsers(req, res))
+);
 
 /**
  * @swagger
@@ -49,7 +54,10 @@ userRoutes.get('/', (req, res) => userController.getAllUsers(req, res));
  *       404:
  *         description: Usuario no encontrado
  */
-userRoutes.get('/:id', (req, res) => userController.getUserById(req, res));
+userRoutes.get(
+  '/:id',
+  asyncHandler((req, res) => userController.getUserById(req, res))
+);
 
 /**
  * @swagger
@@ -71,7 +79,10 @@ userRoutes.get('/:id', (req, res) => userController.getUserById(req, res));
  *       400:
  *         description: Datos inválidos
  */
-userRoutes.post('/', (req, res) => userController.createUser(req, res));
+userRoutes.post(
+  '/',
+  asyncHandler((req, res) => userController.createUser(req, res))
+);
 
 /**
  * @swagger
@@ -98,7 +109,10 @@ userRoutes.post('/', (req, res) => userController.createUser(req, res));
  *       404:
  *         description: Usuario no encontrado
  */
-userRoutes.put('/:id', (req, res) => userController.updateUser(req, res));
+userRoutes.put(
+  '/:id',
+  asyncHandler((req, res) => userController.updateUser(req, res))
+);
 
 /**
  * @swagger
@@ -117,6 +131,9 @@ userRoutes.put('/:id', (req, res) => userController.updateUser(req, res));
  *       404:
  *         description: Usuario no encontrado
  */
-userRoutes.delete('/:id', (req, res) => userController.deleteUser(req, res));
+userRoutes.delete(
+  '/:id',
+  asyncHandler((req, res) => userController.deleteUser(req, res))
+);
 
 export { userRoutes };

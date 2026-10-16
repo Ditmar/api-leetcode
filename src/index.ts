@@ -4,7 +4,7 @@ dotenv.config();
 
 import { config } from '@config';
 import logger from '@logger';
-import express, { Application, Request, Response } from 'express';
+import express, { Application, Request, Response, NextFunction } from 'express';
 import { AuthMiddleware } from './auth/infrastructure/middleware/auth-middleware';
 import { authRoutes } from './auth/infrastructure/routes/auth-routes';
 import { userRoutes } from './user/infrastructure/routes/user-routes';
@@ -14,11 +14,24 @@ import { contestRoutes } from './contests/infrastructure/contests.router';
 import { problemsRouter } from './problems/infrastructure/problems.router';
 import { configureSwagger } from './config/swagger.config';
 import { submissionsRouter } from './submissions/infrastructure/submissions.router';
+import { errorHandler } from './share/infrastructure/middleware/error-handler';
 
 const app: Application = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof SyntaxError && 'body' in err) {
+    res.status(400).json({
+      success: false,
+      error: 'Invalid JSON payload',
+    });
+    return;
+  }
+
+  next(err);
+});
 
 if (config.app.nodeEnv !== 'production') {
   configureSwagger(app);
@@ -56,9 +69,20 @@ app.use('/api', submissionsRouter);
 
 app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
+    success: false,
     error: 'Route not found',
     path: req.originalUrl,
   });
+});
+
+app.use(errorHandler);
+
+process.on('unhandledRejection', reason => {
+  logger.error({ reason }, 'Unhandled rejection');
+});
+
+process.on('uncaughtException', error => {
+  logger.error({ error }, 'Uncaught exception');
 });
 
 const server = app.listen(config.app.port, () => {
