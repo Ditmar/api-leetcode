@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { services } from '../../../share/infrastructure/services';
-import { AuthRequest } from '../../../share/infrastructure/middleware/auth.middleware';
 
 export class TestController {
   private isValidUUID(uuid: string): boolean {
@@ -98,10 +97,18 @@ export class TestController {
     }
   }
 
-  async startTest(req: AuthRequest, res: Response): Promise<void> {
+  async startTest(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const userId = String(req.user!.id);
+      const userId = req.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: 'Unauthorized',
+        });
+        return;
+      }
 
       if (!id) {
         res.status(400).json({
@@ -139,11 +146,19 @@ export class TestController {
     }
   }
 
-  async getQuestions(req: AuthRequest, res: Response): Promise<void> {
+  async getQuestions(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const { sessionId } = req.query;
-      const userId = String(req.user!.id);
+      const userId = req.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: 'Unauthorized',
+        });
+        return;
+      }
 
       if (!id) {
         res.status(400).json({
@@ -180,8 +195,9 @@ export class TestController {
       const result = await services.tests.getQuestions.execute(
         id.toString(),
         sessionId,
-        userId as unknown as string
+        userId
       );
+
       res.status(200).json({
         success: true,
         data: result,
@@ -203,11 +219,19 @@ export class TestController {
     }
   }
 
-  async submitTest(req: AuthRequest, res: Response): Promise<void> {
+  async submitTest(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const { sessionId, answers } = req.body;
-      const userId = String(req.user!.id);
+      const userId = req.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: 'Unauthorized',
+        });
+        return;
+      }
 
       if (!id) {
         res.status(400).json({
@@ -313,7 +337,7 @@ export class TestController {
         id.toString(),
         sessionId,
         answers,
-        userId as unknown as string
+        userId
       );
 
       res.status(201).json({
