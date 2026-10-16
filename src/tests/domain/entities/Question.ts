@@ -1,3 +1,8 @@
+import type {
+  PrivateProgrammingData,
+  PublicProgrammingData,
+} from './ProgrammingData';
+
 export interface Question {
   id: string;
   testId: string;
@@ -11,7 +16,8 @@ export interface Question {
   options?: Record<string, unknown> | null;
   correctAnswer?: string[] | null;
 
-  programmingData?: Record<string, unknown> | null;
+  programmingPublic?: PublicProgrammingData | null;
+  programmingPrivate?: PrivateProgrammingData | null;
 
   createdAt: Date;
   updatedAt: Date;
