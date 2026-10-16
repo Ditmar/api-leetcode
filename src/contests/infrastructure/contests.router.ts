@@ -8,6 +8,7 @@ import { GetContestStatsUseCase } from '../application/use-cases/get-contest-sta
 import { PrismaContestRepository } from './persistence/prisma-contest.repository';
 import { AuthMiddleware } from '../../auth/infrastructure/middleware/auth-middleware';
 import { prisma } from '../../share/infrastructure/prisma-client';
+import { asyncHandler } from '../../share/infrastructure/middleware/async-handler';
 const repository = new PrismaContestRepository(prisma);
 
 const getContestsUseCase = new GetContestsUseCase(repository);
@@ -42,7 +43,10 @@ const router = Router();
  *           application/json:
  *             schema: { $ref: '#/components/schemas/ContestStatsResponse' }
  */
-router.get('/stats', (req, res) => controller.getContestStats(req, res));
+router.get(
+  '/stats',
+  asyncHandler((req, res) => controller.getContestStats(req, res))
+);
 
 /**
  * @swagger
@@ -64,7 +68,10 @@ router.get('/stats', (req, res) => controller.getContestStats(req, res));
  *       404:
  *         description: Concurso no encontrado
  */
-router.get('/:id', (req, res) => controller.getContestById(req, res));
+router.get(
+  '/:id',
+  asyncHandler((req, res) => controller.getContestById(req, res))
+);
 
 /**
  * @swagger
@@ -93,7 +100,10 @@ router.get('/:id', (req, res) => controller.getContestById(req, res));
  *                 data: { type: array, items: { $ref: '#/components/schemas/ContestResponse' } }
  *                 pagination: { $ref: '#/components/schemas/PaginationMeta' }
  */
-router.get('/', (req, res) => controller.getContests(req, res));
+router.get(
+  '/',
+  asyncHandler((req, res) => controller.getContests(req, res))
+);
 
 /**
  * @swagger
@@ -119,8 +129,10 @@ router.get('/', (req, res) => controller.getContests(req, res));
  *       404:
  *         description: Concurso no encontrado
  */
-router.post('/:id/register', AuthMiddleware.validateToken, (req, res) =>
-  controller.registerForContest(req, res)
+router.post(
+  '/:id/register',
+  AuthMiddleware.validateToken,
+  asyncHandler((req, res) => controller.registerForContest(req, res))
 );
 
 /**
@@ -147,8 +159,10 @@ router.post('/:id/register', AuthMiddleware.validateToken, (req, res) =>
  *       401:
  *         description: No autorizado
  */
-router.post('/', AuthMiddleware.validateToken, (req, res) =>
-  controller.createContest(req, res)
+router.post(
+  '/',
+  AuthMiddleware.validateToken,
+  asyncHandler((req, res) => controller.createContest(req, res))
 );
 
 export { router as contestRoutes };

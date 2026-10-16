@@ -9,6 +9,7 @@ import { AuthLogout } from '../../application/auth-logout/auth-logout';
 import { AuthPrismaRepository } from '../repository/auth-prisma-repository';
 import { RefreshTokenPrismaRepository } from '../repository/refresh-token-prisma-repository';
 import { prisma } from '../../../share/infrastructure/prisma-client';
+import { asyncHandler } from '../../../share/infrastructure/middleware/async-handler';
 
 //  FIX: Create dependencies and inject them
 const authRepository = new AuthPrismaRepository(prisma);
@@ -57,7 +58,10 @@ const authRoutes = Router();
  *       409:
  *         description: El usuario ya existe
  */
-authRoutes.post('/signup', (req, res) => authController.signup(req, res));
+authRoutes.post(
+  '/signup',
+  asyncHandler((req, res) => authController.signup(req, res))
+);
 
 /**
  * @swagger
@@ -83,7 +87,10 @@ authRoutes.post('/signup', (req, res) => authController.signup(req, res));
  *       401:
  *         description: Credenciales inválidas
  */
-authRoutes.post('/login', (req, res) => authController.login(req, res));
+authRoutes.post(
+  '/login',
+  asyncHandler((req, res) => authController.login(req, res))
+);
 
 /**
  * @swagger
@@ -109,8 +116,9 @@ authRoutes.post('/login', (req, res) => authController.login(req, res));
  *       401:
  *         description: Refresh Token inválido
  */
-authRoutes.post('/refresh', (req, res) =>
-  authController.refreshToken(req, res)
+authRoutes.post(
+  '/refresh',
+  asyncHandler((req, res) => authController.refreshToken(req, res))
 );
 
 /**
@@ -129,7 +137,10 @@ authRoutes.post('/refresh', (req, res) =>
  *       401:
  *         description: No autorizado
  */
-authRoutes.post('/logout', (req, res) => authController.logout(req, res));
+authRoutes.post(
+  '/logout',
+  asyncHandler((req, res) => authController.logout(req, res))
+);
 
 /**
  * @swagger
@@ -151,8 +162,10 @@ authRoutes.post('/logout', (req, res) => authController.logout(req, res));
  *       401:
  *         description: Token inválido o expirado
  */
-authRoutes.get('/me', AuthMiddleware.validateToken, (req, res) =>
-  authController.getMe(req, res)
+authRoutes.get(
+  '/me',
+  AuthMiddleware.validateToken,
+  asyncHandler((req, res) => authController.getMe(req, res))
 );
 
 export { authRoutes };

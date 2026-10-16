@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { TestController } from '../controller/TestController';
 import { authMiddleware } from '../../../share/infrastructure/middleware/auth.middleware';
+import { asyncHandler } from '../../../share/infrastructure/middleware/async-handler';
 
 const router = Router();
 const controller = new TestController();
@@ -35,7 +36,10 @@ const controller = new TestController();
  *                 data: { type: array, items: { $ref: '#/components/schemas/TestResponse' } }
  *                 pagination: { $ref: '#/components/schemas/PaginationMeta' }
  */
-router.get('/', (req, res) => controller.getTests(req, res));
+router.get(
+  '/',
+  asyncHandler((req, res) => controller.getTests(req, res))
+);
 
 /**
  * @swagger
@@ -57,7 +61,10 @@ router.get('/', (req, res) => controller.getTests(req, res));
  *       404:
  *         description: Test no encontrado
  */
-router.get('/:id', (req, res) => controller.getTestById(req, res));
+router.get(
+  '/:id',
+  asyncHandler((req, res) => controller.getTestById(req, res))
+);
 
 /**
  * @swagger
@@ -83,8 +90,10 @@ router.get('/:id', (req, res) => controller.getTestById(req, res));
  *       404:
  *         description: Test no encontrado
  */
-router.post('/:id/start', authMiddleware, (req, res) =>
-  controller.startTest(req, res)
+router.post(
+  '/:id/start',
+  authMiddleware,
+  asyncHandler((req, res) => controller.startTest(req, res))
 );
 
 /**
@@ -114,8 +123,10 @@ router.post('/:id/start', authMiddleware, (req, res) =>
  *       404:
  *         description: Test no encontrado
  */
-router.get('/:id/questions', authMiddleware, (req, res) =>
-  controller.getQuestions(req, res)
+router.get(
+  '/:id/questions',
+  authMiddleware,
+  asyncHandler((req, res) => controller.getQuestions(req, res))
 );
 
 /**
@@ -147,8 +158,10 @@ router.get('/:id/questions', authMiddleware, (req, res) =>
  *       404:
  *         description: Test no encontrado
  */
-router.post('/:id/submit', authMiddleware, (req, res) =>
-  controller.submitTest(req, res)
+router.post(
+  '/:id/submit',
+  authMiddleware,
+  asyncHandler((req, res) => controller.submitTest(req, res))
 );
 
 export { router as testRoutes };
