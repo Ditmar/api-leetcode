@@ -10,6 +10,7 @@ import { Test } from '../../domain/entities/Test';
 import { TestSession } from '../../domain/entities/TestSession';
 import { Submission } from '../../domain/entities/Submission';
 import { Question } from '../../domain/entities/Question';
+import { splitProgrammingData } from '../../domain/entities/ProgrammingData';
 
 export class TestPrismaRepository implements TestRepository {
   constructor(private prisma: PrismaClient) {}
@@ -170,21 +171,28 @@ export class TestPrismaRepository implements TestRepository {
       orderBy: { order: 'asc' },
     });
 
-    return questions.map(q => ({
-      id: q.id,
-      testId: q.testId,
-      type: q.type as 'MCQ' | 'PROGRAMMING',
-      text: q.text,
-      difficulty: q.difficulty as 'EASY' | 'MEDIUM' | 'HARD',
-      points: q.points,
-      timeLimit: q.timeLimit,
-      options: q.options as Record<string, unknown> | null,
-      correctAnswer: q.correctAnswer as string[] | null,
-      programmingData: q.programmingData as Record<string, unknown> | null,
-      order: q.order,
-      createdAt: q.createdAt,
-      updatedAt: q.updatedAt,
-    }));
+    return questions.map(q => {
+      const programming = q.programmingData
+        ? splitProgrammingData(q.programmingData)
+        : null;
+
+      return {
+        id: q.id,
+        testId: q.testId,
+        type: q.type as 'MCQ' | 'PROGRAMMING',
+        text: q.text,
+        difficulty: q.difficulty as 'EASY' | 'MEDIUM' | 'HARD',
+        points: q.points,
+        timeLimit: q.timeLimit,
+        options: q.options as Record<string, unknown> | null,
+        correctAnswer: q.correctAnswer as string[] | null,
+        programmingPublic: programming?.publicData ?? null,
+        programmingPrivate: programming?.privateData ?? null,
+        order: q.order,
+        createdAt: q.createdAt,
+        updatedAt: q.updatedAt,
+      };
+    });
   }
 
   async getSessionById(
