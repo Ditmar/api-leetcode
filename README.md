@@ -150,6 +150,14 @@ The configuration files are managed using the `config` package. Each file corres
 ## how decide the environment
 the library config automatically detects the environment based on the `NODE_ENV` environment variable. If `NODE_ENV` is not set, it defaults to `default.json`.
 
+### ⚙️ Piston Code Executor & `wallTimeMs`
+
+The API integrates with a self-hosted **Piston** instance via the `CodeRunner` port (`src/domain/code-runner/code-runner.interface.ts`) and `PistonCodeRunner` adapter (`src/infrastructure/code-runner/piston-code-runner.ts`).
+
+- **Configuration Variables**: `PISTON_URL`, `PISTON_TOKEN`, `PISTON_COMPILE_TIMEOUT_MS`, `PISTON_RUN_TIMEOUT_MS`, `PISTON_MEMORY_LIMIT_BYTES`, `PISTON_MAX_OUTPUT_SIZE_BYTES`, `PISTON_MAX_CODE_SIZE_BYTES`, and `PISTON_LANGUAGE_MAP`.
+- **Wall Time (`wallTimeMs`)**: Every `RunCodeResult` reports `wallTimeMs`, measured in the runner using `performance.now()`. This captures the monotonic end-to-end wall-clock execution duration (including I/O waits and sleep calls not reflected in raw CPU time). See [`docs/code-runner.md`](./docs/code-runner.md) for architecture details and the `CD-018` security abuse test matrix.
+
+
 🏷️ Versioning and Releases
 
 This project uses release-it together with
