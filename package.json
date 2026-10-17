@@ -1,6 +1,6 @@
 {
   "name": "api-leetcode",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Express API with TypeScript",
   "main": "dist/index.js",
   "scripts": {
@@ -11,9 +11,11 @@
     "lint:fix": "npx eslint \"src/**/*.ts\" --fix",
     "format": "npx prettier --write src/**/*.ts",
     "prepare": "npx husky install",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
     "db:up": "docker compose -f ./local-database/database.yaml up -d",
-    "prisma:migrate": "npx prisma migrate dev --name init"
+    "prisma:migrate": "npx prisma migrate dev --name init",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "express",
@@ -38,9 +40,11 @@
     "@types/jsonwebtoken": "9.0.10",
     "@types/node": "24.10.0",
     "@types/pino": "7.0.5",
+    "@types/supertest": "^7.2.1",
     "@types/uuid": "10.0.0",
     "@typescript-eslint/eslint-plugin": "8.46.3",
     "@typescript-eslint/parser": "8.46.3",
+    "@vitest/coverage-v8": "^5.0.5",
     "eslint": "8.57.1",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "5.5.4",
@@ -49,10 +53,12 @@
     "nodemon": "3.1.10",
     "prettier": "3.6.2",
     "prisma": "6.19.0",
+    "supertest": "^7.3.1",
     "ts-node": "10.9.2",
     "tsc-alias": "1.8.16",
     "tsconfig-paths": "4.2.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "^5.0.5"
   },
   "dependencies": {
     "@prisma/client": "6.19.0",
