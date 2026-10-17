@@ -5,13 +5,11 @@
     "logLevel": "info"
   },
   "database": {
-    "url": "postgres://your_username:your_password@localhost:5432/leetcode_db"
+    "url": "postgresql://localhost:5432/leetcode_db"
   },
   "JWT": {
-    "secret": "your_jwt_secret_key",
     "expiresIn": 30000,
     "saltRounds": 10,
-    "refreshTokenSecret": "your_refresh_token_secret_key",
     "refreshTokenExpiresIn": 604800000
   }
 }

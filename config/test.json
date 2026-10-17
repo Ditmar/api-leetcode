@@ -1,15 +1,17 @@
 {
   "app": {
     "port": 3000,
-    "nodeEnv": "development",
+    "nodeEnv": "test",
     "logLevel": "info"
   },
   "database": {
-    "url": "postgres://your_username:your_password@localhost:5432/leetcode_db"
+    "url": "postgresql://test-user:test-password@localhost:5432/test_db"
   },
   "JWT": {
-    "secret": "your_jwt_secret_key",
+    "secret": "test-jwt-secret-32-char-minimum-value",
     "expiresIn": 30000,
-    "saltRounds": 10
+    "saltRounds": 10,
+    "refreshTokenSecret": "test-refresh-token-secret-32-char-min",
+    "refreshTokenExpiresIn": 604800000
   }
 }
