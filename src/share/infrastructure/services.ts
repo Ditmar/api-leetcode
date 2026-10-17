@@ -1,12 +1,6 @@
 // ============================================
-// IMPORTS EXISTENTES (User & Auth)
+// IMPORTS EXISTENTES (Auth)
 // ============================================
-import { UserCreate } from '../../user/application/user-create/user-create';
-import { UserDelete } from '../../user/application/user-delete.ts/user-delete';
-import { UserEdit } from '../../user/application/user-edit/user-edit';
-import { UserGetAll } from '../../user/application/user-get-all/user-get-all';
-import { UserGetById } from '../../user/application/user-get-by-id/user-get-by-id';
-import { UserMockRepository } from '../../user/infrastructure/repository/user-mock-repository';
 
 import { AuthGetMe } from '../../auth/application/auth-get-me/auth-get-me';
 import { AuthLogin } from '../../auth/application/auth-login/auth-login';
@@ -35,7 +29,6 @@ import { CourseGetByUser } from '../../course/application/course-get-by-user/cou
 // ============================================
 // REPOSITORIES
 // ============================================
-const userRepository = new UserMockRepository();
 const authRepository = new AuthPrismaRepository(prisma);
 const refreshTokenRepository = new RefreshTokenPrismaRepository(prisma);
 const testRepository = new TestPrismaRepository(prisma);
@@ -46,13 +39,6 @@ const enrollmentRepository = new EnrollmentPrismaRepository(prisma);
 // EXPORT SERVICES
 // ============================================
 export const services = {
-  user: {
-    getAll: new UserGetAll(userRepository),
-    getById: new UserGetById(userRepository),
-    create: new UserCreate(userRepository),
-    update: new UserEdit(userRepository),
-    delete: new UserDelete(userRepository),
-  },
   auth: {
     signup: new AuthSignup(authRepository),
     login: new AuthLogin(authRepository, refreshTokenRepository),
