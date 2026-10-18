@@ -14,10 +14,22 @@ import { contestRoutes } from './contests/infrastructure/contests.router';
 import { problemsRouter } from './problems/infrastructure/problems.router';
 import { configureSwagger } from './config/swagger.config';
 import { submissionsRouter } from './submissions/infrastructure/submissions.router';
+import helmet from 'helmet';
+import cors from 'cors';
+import { globalLimiter } from './share/infrastructure/middleware/rate-limit.middleware';
+import { createTimeoutMiddleware } from './share/infrastructure/middleware/timeout.middleware';
 
 const app: Application = express();
 
-app.use(express.json());
+// Security (API-010). Order: client IP resolution -> headers -> CORS -> rate limit -> timeout -> body parsing.
+app.set('trust proxy', config.security.trustProxy);
+app.use(helmet());
+app.use(cors({ origin: config.security.corsOrigin }));
+app.use(globalLimiter);
+app.use(createTimeoutMiddleware(config.security.requestTimeoutMs, logger));
+
+// JSON body limit: 5 MB (larger payloads get HTTP 413).
+app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 if (config.app.nodeEnv !== 'production') {
