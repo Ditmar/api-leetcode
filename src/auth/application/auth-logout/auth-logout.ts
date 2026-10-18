@@ -1,6 +1,7 @@
 import { RefreshTokenRepository } from '../../domain/repository/refresh-token-repository';
 import { RefreshTokenToken } from '../../domain/refresh-token-token';
 import { RefreshTokenNotFoundError } from '../../domain/errors/refresh-token-errors';
+import { AuthUserId } from '../../domain/auth-user-id';
 
 export class AuthLogout {
   constructor(private refreshTokenRepository: RefreshTokenRepository) {}
@@ -20,7 +21,6 @@ export class AuthLogout {
   }
 
   async executeAll(userId: string): Promise<void> {
-    const { AuthUserId } = await import('../../domain/auth-user-id');
     await this.refreshTokenRepository.revokeAllByUserId(new AuthUserId(userId));
   }
 }

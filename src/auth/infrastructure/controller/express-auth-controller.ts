@@ -187,7 +187,7 @@ export class ExpressAuthController {
       res.status(200).json(result);
     } catch (error) {
       if (error instanceof RefreshTokenNotFoundError) {
-        res.status(404).json({
+        res.status(401).json({
           error: 'Refresh token not found',
           message: error.message,
         });
@@ -234,15 +234,10 @@ export class ExpressAuthController {
 
       logger.info('User logged out successfully');
 
-      res.status(200).json({
-        message: 'Logged out successfully',
-      });
+      res.status(204).send();
     } catch (error) {
       if (error instanceof RefreshTokenNotFoundError) {
-        res.status(404).json({
-          error: 'Refresh token not found',
-          message: error.message,
-        });
+        res.status(204).send();
         return;
       }
 
@@ -250,6 +245,32 @@ export class ExpressAuthController {
       res.status(500).json({
         error: 'Internal server error',
         message: 'Error logging out',
+      });
+    }
+  }
+  async logoutAll(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          error: 'Unauthorized',
+          message: 'User ID not found in token',
+        });
+        return;
+      }
+
+      await this.logoutUseCase.executeAll(userId);
+
+      logger.info('User logged out from all sessions');
+
+      res.status(204).send();
+    } catch (error) {
+      logger.error({ message: 'Unexpected error in logoutAll', error });
+
+      res.status(500).json({
+        error: 'Internal server error',
+        message: 'Error logging out from all sessions',
       });
     }
   }
