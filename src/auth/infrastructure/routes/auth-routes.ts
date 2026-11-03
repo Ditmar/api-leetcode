@@ -9,6 +9,11 @@ import { AuthLogout } from '../../application/auth-logout/auth-logout';
 import { AuthPrismaRepository } from '../repository/auth-prisma-repository';
 import { RefreshTokenPrismaRepository } from '../repository/refresh-token-prisma-repository';
 import { prisma } from '../../../share/infrastructure/prisma-client';
+import {
+  loginLimiter,
+  refreshLimiter,
+  signupLimiter,
+} from '../../../share/infrastructure/middleware/rate-limit.middleware';
 
 //  FIX: Create dependencies and inject them
 const authRepository = new AuthPrismaRepository(prisma);
@@ -57,7 +62,9 @@ const authRoutes = Router();
  *       409:
  *         description: El usuario ya existe
  */
-authRoutes.post('/signup', (req, res) => authController.signup(req, res));
+authRoutes.post('/signup', signupLimiter, (req, res) =>
+  authController.signup(req, res)
+);
 
 /**
  * @swagger
@@ -83,7 +90,9 @@ authRoutes.post('/signup', (req, res) => authController.signup(req, res));
  *       401:
  *         description: Credenciales inválidas
  */
-authRoutes.post('/login', (req, res) => authController.login(req, res));
+authRoutes.post('/login', loginLimiter, (req, res) =>
+  authController.login(req, res)
+);
 
 /**
  * @swagger
@@ -109,7 +118,7 @@ authRoutes.post('/login', (req, res) => authController.login(req, res));
  *       401:
  *         description: Refresh Token inválido
  */
-authRoutes.post('/refresh', (req, res) =>
+authRoutes.post('/refresh', refreshLimiter, (req, res) =>
   authController.refreshToken(req, res)
 );
 
