@@ -3,6 +3,7 @@ import { RefreshTokenRepository } from '../../domain/repository/refresh-token-re
 import { RefreshToken } from '../../domain/refresh-token';
 import { RefreshTokenToken } from '../../domain/refresh-token-token';
 import { AuthUserId } from '../../domain/auth-user-id';
+import { hashRefreshToken } from '../../domain/refresh-token-hash';
 
 export class RefreshTokenPrismaRepository implements RefreshTokenRepository {
   private prisma: PrismaClient;
@@ -12,31 +13,23 @@ export class RefreshTokenPrismaRepository implements RefreshTokenRepository {
   }
 
   async create(refreshToken: RefreshToken): Promise<RefreshToken> {
-    const created = await this.prisma.refreshToken.create({
+    await this.prisma.refreshToken.create({
       data: {
         id: refreshToken.id.getValue(),
-        token: refreshToken.token.getValue(),
+        token: hashRefreshToken(refreshToken.token.getValue()),
         userId: refreshToken.userId.getValue(),
         expiresAt: refreshToken.expiresAt.getValue(),
         createdAt: refreshToken.createdAt.getValue(),
         isRevoked: refreshToken.isRevoked.getValue(),
       },
     });
-
-    return new RefreshToken(
-      created.id,
-      created.token,
-      created.userId,
-      created.expiresAt,
-      created.createdAt,
-      created.isRevoked
-    );
+    return refreshToken;
   }
 
   async findByToken(token: RefreshTokenToken): Promise<RefreshToken | null> {
     const refreshToken = await this.prisma.refreshToken.findUnique({
       where: {
-        token: token.getValue(),
+        token: hashRefreshToken(token.getValue()),
       },
     });
 
@@ -85,7 +78,7 @@ export class RefreshTokenPrismaRepository implements RefreshTokenRepository {
   async revoke(token: RefreshTokenToken): Promise<void> {
     await this.prisma.refreshToken.update({
       where: {
-        token: token.getValue(),
+        token: hashRefreshToken(token.getValue()),
       },
       data: {
         isRevoked: true,

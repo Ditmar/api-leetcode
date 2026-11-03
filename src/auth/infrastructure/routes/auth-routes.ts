@@ -155,4 +155,24 @@ authRoutes.get('/me', AuthMiddleware.validateToken, (req, res) =>
   authController.getMe(req, res)
 );
 
+/**
+ * @swagger
+ * /api/auth/logout-all:
+ *   post:
+ *     summary: Cerrar todas las sesiones
+ *     description: Invalida todos los refresh tokens del usuario autenticado.
+ *     tags:
+ *       - Auth
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       204:
+ *         description: Todas las sesiones cerradas correctamente
+ *       401:
+ *         description: No autorizado
+ */
+authRoutes.post('/logout-all', AuthMiddleware.validateToken, (req, res) =>
+  authController.logoutAll(req, res)
+);
+
 export { authRoutes };

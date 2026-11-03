@@ -9,8 +9,12 @@ import {
   RefreshTokenRevokedError,
 } from '../../domain/errors/refresh-token-errors';
 
+import { v4 as uuidv4 } from 'uuid';
+import { RefreshToken } from '../../domain/refresh-token';
+
 export interface RefreshTokenResponse {
   accessToken: string;
+  refreshToken: string;
 }
 
 export class AuthRefreshToken {
@@ -29,6 +33,7 @@ export class AuthRefreshToken {
     }
 
     if (refreshToken.isRevoked.getValue()) {
+      await this.refreshTokenRepository.revokeAllByUserId(refreshToken.userId);
       throw new RefreshTokenRevokedError();
     }
 
@@ -42,6 +47,25 @@ export class AuthRefreshToken {
     if (!user) {
       throw new RefreshTokenNotFoundError('User not found');
     }
+    // Revoke the current refresh token before rotating it.
+    await this.refreshTokenRepository.revoke(
+      new RefreshTokenToken(refreshTokenValue)
+    );
+
+    // Generate a new refresh token.
+    const newRefreshTokenValue = uuidv4();
+
+    const newRefreshTokenExpiresAt = new Date(
+      Date.now() + config.JWT.refreshTokenExpiresIn
+    );
+
+    const newRefreshToken = new RefreshToken(
+      uuidv4(),
+      newRefreshTokenValue,
+      user.id.getValue(),
+      newRefreshTokenExpiresAt
+    );
+    await this.refreshTokenRepository.create(newRefreshToken);
 
     // Generate new access token
     const accessTokenOptions: SignOptions = {
@@ -60,6 +84,7 @@ export class AuthRefreshToken {
 
     return {
       accessToken,
+      refreshToken: newRefreshTokenValue,
     };
   }
 }

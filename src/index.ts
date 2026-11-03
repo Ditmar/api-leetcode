@@ -14,8 +14,23 @@ import { contestRoutes } from './contests/infrastructure/contests.router';
 import { problemsRouter } from './problems/infrastructure/problems.router';
 import { configureSwagger } from './config/swagger.config';
 import { submissionsRouter } from './submissions/infrastructure/submissions.router';
+import { prisma } from './share/infrastructure/prisma-client';
+import { RefreshTokenPrismaRepository } from './auth/infrastructure/repository/refresh-token-prisma-repository';
 
 const app: Application = express();
+const refreshTokenRepository = new RefreshTokenPrismaRepository(prisma);
+
+const cleanupExpiredRefreshTokens = async (): Promise<void> => {
+  try {
+    await refreshTokenRepository.deleteExpired();
+    logger.info('Expired refresh tokens cleaned up successfully');
+  } catch (error) {
+    logger.error({
+      message: 'Failed to clean up expired refresh tokens',
+      error,
+    });
+  }
+};
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -69,6 +84,19 @@ const server = app.listen(config.app.port, () => {
   }
 
   logger.info(`Environment: ${config.app.nodeEnv}`);
+
+  void cleanupExpiredRefreshTokens();
+
+  const refreshTokenCleanupInterval = setInterval(
+    () => {
+      void cleanupExpiredRefreshTokens();
+    },
+    60 * 60 * 1000
+  );
+
+  server.on('close', () => {
+    clearInterval(refreshTokenCleanupInterval);
+  });
 });
 
 server.on('error', (err: Error) => {
