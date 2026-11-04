@@ -10,6 +10,24 @@
   "JWT": {
     "secret": "your_jwt_secret_key",
     "expiresIn": 30000,
-    "saltRounds": 10
+    "saltRounds": 10,
+    "refreshTokenSecret": "your_refresh_token_secret_key",
+    "refreshTokenExpiresIn": 604800000
+  },
+  "PISTON_URL": "http://localhost:2000",
+  "PISTON_COMPILE_TIMEOUT_MS": 10000,
+  "PISTON_RUN_TIMEOUT_MS": 5000,
+  "PISTON_MEMORY_LIMIT_BYTES": 134217728,
+  "PISTON_MAX_OUTPUT_SIZE_BYTES": 65536,
+  "PISTON_MAX_CODE_SIZE_BYTES": 65536,
+  "PISTON_LANGUAGE_MAP": {
+    "javascript": {
+      "language": "javascript",
+      "version": "18.15.0"
+    },
+    "python": {
+      "language": "python",
+      "version": "3.10.0"
+    }
   }
 }
