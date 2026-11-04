@@ -87,9 +87,12 @@ Basic test endpoint
 }
 ```
 
-### GET /health
 
-Server health check
+### GET /health/live
+
+Checks whether the API process is running.
+
+Returns HTTP 200:
 
 ```json
 {
@@ -97,6 +100,29 @@ Server health check
   "uptime": 123.456
 }
 ```
+
+### GET /health/ready
+
+Checks PostgreSQL availability using Prisma and SELECT 1.
+
+Returns HTTP 200 when the database is available:
+
+```json
+{
+  "status": "ready",
+  "database": "connected"
+}
+```
+
+Returns HTTP 503 when the database is unavailable:
+
+```json
+{
+  "status": "unavailable",
+  "database": "disconnected"
+}
+```
+
 
 ## 🛡️ Git Hooks
 
