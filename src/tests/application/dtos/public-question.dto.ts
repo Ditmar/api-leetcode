@@ -12,7 +12,7 @@ export interface PublicExampleDto {
 }
 
 export interface PublicProgrammingDataDto {
-  starterCode: unknown;
+  starterCode: string | null;
   examples: PublicExampleDto[];
 }
 

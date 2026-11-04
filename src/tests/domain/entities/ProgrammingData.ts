@@ -4,7 +4,7 @@ export interface ProgrammingExample {
 }
 
 export interface PublicProgrammingData {
-  starterCode: unknown;
+  starterCode: string | null;
   examples: ProgrammingExample[];
 }
 
@@ -44,7 +44,8 @@ export const splitProgrammingData = (raw: unknown): SplitProgrammingData => {
 
   return {
     publicData: {
-      starterCode: data.starterCode ?? null,
+      starterCode:
+        typeof data.starterCode === 'string' ? data.starterCode : null,
       examples: testCases
         .filter(testCase => testCase.isExample)
         .map(testCase => ({

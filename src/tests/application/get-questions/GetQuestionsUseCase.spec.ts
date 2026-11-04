@@ -135,4 +135,12 @@ describe('GetQuestionsUseCase - no filtra datos privados (API-016)', () => {
     );
     expect(privateData.expectedOutput).toBe(SECRET_GLOBAL_OUTPUT);
   });
+
+  it('descarta un starterCode que no sea texto (por ejemplo un objeto con campos extra)', () => {
+    const { publicData: data } = splitProgrammingData({
+      starterCode: { js: 'x', expectedOutput: SECRET_GLOBAL_OUTPUT },
+    });
+
+    expect(data.starterCode).toBeNull();
+  });
 });
