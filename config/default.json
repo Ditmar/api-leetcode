@@ -4,9 +4,6 @@
     "nodeEnv": "development",
     "logLevel": "info"
   },
-  "database": {
-    "url": "postgresql://localhost:5432/leetcode_db"
-  },
   "JWT": {
     "expiresIn": 30000,
     "saltRounds": 10,

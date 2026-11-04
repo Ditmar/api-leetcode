@@ -1,0 +1,5 @@
+{
+  "database": {
+    "url": "postgresql://localhost:5432/leetcode_db"
+  }
+}

@@ -32,6 +32,8 @@ jobs:
         run: npx prisma generate
       - name: Build app
         run: npm run build
+      - name: Test configuration validation
+        run: node --test scripts/config.test.cjs
 
   build-and-push:
     runs-on: ubuntu-latest

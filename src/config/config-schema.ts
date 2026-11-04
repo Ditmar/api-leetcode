@@ -34,15 +34,19 @@ export const configSchema = z
         url: z.string().trim().min(1).optional(),
       })
       .optional(),
-    JWT: z
-      .object({
-        secret: z.string().trim().min(1).optional(),
-        expiresIn: z.coerce.number().min(1000),
-        saltRounds: z.coerce.number().min(4).max(31),
-        refreshTokenSecret: z.string().trim().min(1).optional(),
-        refreshTokenExpiresIn: z.coerce.number().min(1000),
-      })
-      .optional(),
+    JWT: z.object({
+      secret: z
+        .string({ error: 'JWT_SECRET is required.' })
+        .trim()
+        .min(1, 'JWT_SECRET is required.'),
+      expiresIn: z.coerce.number().min(1000),
+      saltRounds: z.coerce.number().min(4).max(31),
+      refreshTokenSecret: z
+        .string({ error: 'JWT_REFRESH_TOKEN_SECRET is required.' })
+        .trim()
+        .min(1, 'JWT_REFRESH_TOKEN_SECRET is required.'),
+      refreshTokenExpiresIn: z.coerce.number().min(1000),
+    }),
   })
   .superRefine((config, ctx) => {
     const isProduction = config.app.nodeEnv === 'production';
