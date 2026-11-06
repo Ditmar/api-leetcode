@@ -11,7 +11,7 @@
     "lint:fix": "npx eslint \"src/**/*.ts\" --fix",
     "format": "npx prettier --write src/**/*.ts",
     "prepare": "npx husky install",
-    "test": "jest",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "db:up": "docker compose -f ./local-database/database.yaml up -d",
     "prisma:migrate": "npx prisma migrate dev"
   },
