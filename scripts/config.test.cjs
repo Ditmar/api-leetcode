@@ -8,15 +8,18 @@ const { JWT: testJwt } = require('../config/test.json');
 const root = path.resolve(__dirname, '..');
 const valid = {
   JWT_SECRET: 'test-only-access-key-with-at-least-32-characters',
-  JWT_REFRESH_TOKEN_SECRET: 'test-only-refresh-key-with-at-least-32-characters',
   DATABASE_URL: 'postgresql://test:test@localhost:5432/test_db',
 };
 
-function startup(overrides = {}, mode = 'production') {
+function startup(
+  overrides = {},
+  mode = 'production',
+  code = "require('./dist/config/config.js')"
+) {
   const env = { ...process.env };
   for (const key of Object.keys(env)) {
     if (
-      /^(NODE_ENV|NODE_CONFIG.*|SUPPRESS_.*|JWT_.*|DATABASE_URL|PORT|LOG_LEVEL)$/i.test(
+      /^(NODE_ENV|ENV|NODE_CONFIG.*|SUPPRESS_.*|JWT_.*|DATABASE_URL|PORT|LOG_LEVEL)$/i.test(
         key
       )
     ) {
@@ -27,21 +30,38 @@ function startup(overrides = {}, mode = 'production') {
   for (const key of Object.keys(env)) {
     if (env[key] === undefined) delete env[key];
   }
-  return spawnSync(
-    process.execPath,
-    ['-e', "require('./dist/config/config.js')"],
-    {
-      cwd: root,
-      env,
-      encoding: 'utf8',
-    }
-  );
+  return spawnSync(process.execPath, ['-e', code], {
+    cwd: root,
+    env,
+    encoding: 'utf8',
+  });
 }
 
-test('production accepts explicitly configured credentials', () => {
+test('deploy-like production starts with only JWT_SECRET and DATABASE_URL', () => {
   const result = startup();
   assert.equal(result.status, 0, result.stderr);
 });
+
+for (const deployment of ['ppd', 'prod']) {
+  test(`Docker ${deployment} uses production validation and JSON logging`, () => {
+    const result = startup(
+      { ENV: deployment },
+      'production',
+      `
+      const { config } = require('./dist/config/config.js');
+      require('node:assert/strict').equal(config.app.nodeEnv, 'production');
+      require('node:assert/strict').equal('refreshTokenSecret' in config.JWT, false);
+      require('./dist/logger/index.js').default.info('startup-check');
+    `
+    );
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(JSON.parse(result.stdout.trim()).msg, 'startup-check');
+
+    const invalid = startup({ ENV: deployment, JWT_SECRET: 'short' });
+    assert.equal(invalid.status, 1);
+    assert.match(invalid.stderr, /JWT_SECRET must be at least 32/);
+  });
+}
 
 for (const key of Object.keys(valid)) {
   test(`production rejects missing ${key} without exposing secrets`, () => {
@@ -53,29 +73,25 @@ for (const key of Object.keys(valid)) {
   });
 }
 
-for (const key of ['JWT_SECRET', 'JWT_REFRESH_TOKEN_SECRET']) {
-  for (const field of ['secret', 'refreshTokenSecret']) {
-    test(`production rejects the test fixture's ${field} in ${key}`, () => {
-      const result = startup({ [key]: testJwt[field] });
-      assert.equal(result.status, 1);
-      assert.match(result.stderr, new RegExp(key));
-      assert.ok(!result.stderr.includes(testJwt[field]));
-    });
-  }
+test('production rejects the test signing key without exposing it', () => {
+  const result = startup({ JWT_SECRET: testJwt.secret });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /JWT_SECRET/);
+  assert.ok(!result.stderr.includes(testJwt.secret));
+});
 
-  for (const value of [
-    ' ',
-    'short',
-    'your_jwt_secret_key',
-    'replace_with_a_secure_random_secret_at_least_32_chars',
-  ]) {
-    test(`production rejects ${key} value ${JSON.stringify(value)}`, () => {
-      const result = startup({ [key]: value });
-      assert.equal(result.status, 1);
-      assert.match(result.stderr, new RegExp(key));
-      assert.ok(!result.stderr.includes(valid.JWT_SECRET));
-    });
-  }
+for (const value of [
+  ' ',
+  'short',
+  'your_jwt_secret_key',
+  'replace_with_a_secure_random_secret_at_least_32_chars',
+]) {
+  test(`production rejects JWT_SECRET value ${JSON.stringify(value)}`, () => {
+    const result = startup({ JWT_SECRET: value });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /JWT_SECRET/);
+    assert.ok(!result.stderr.includes(valid.JWT_SECRET));
+  });
 }
 
 test('development keeps its local database default with explicit JWT secrets', () => {
