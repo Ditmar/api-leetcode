@@ -8,7 +8,6 @@ import type { GetProblemsMetaDto } from './get-problems.dto';
 export interface TestCaseResponseDto {
   id: string;
   input: string;
-  expectedOutput: string;
   explanation: string | null;
   order: number;
 }
@@ -58,7 +57,6 @@ export const toProblemSummaryDto = (problem: Problem): ProblemSummaryDto => ({
 export const toTestCaseDto = (testCase: TestCase): TestCaseResponseDto => ({
   id: testCase.id,
   input: testCase.input,
-  expectedOutput: testCase.expectedOutput,
   explanation: testCase.explanation,
   order: testCase.order,
 });
@@ -75,6 +73,6 @@ export const toProblemDetailDto = (problem: Problem): ProblemDetailDto => ({
   ...toProblemSummaryDto(problem),
   description: problem.description,
   constraints: problem.constraints,
-  testCases: problem.testCases.map(toTestCaseDto),
+  testCases: problem.testCases.filter(tc => tc.isExample).map(toTestCaseDto),
   starterCodes: problem.starterCodes.map(toStarterCodeDto),
 });
