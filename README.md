@@ -126,6 +126,44 @@ This project uses Husky to automatically run:
 - Source maps enabled
 - Type declarations generated
 
+## 🧪 How to test
+
+Tests use [Vitest](https://vitest.dev/) (and Supertest for route tests, once the app wiring from API-021 is ready).
+
+### Requirements
+
+- Node.js `>=22.20.0`
+- `npm install` (no database or Docker is needed for the current tests)
+
+### Scripts
+
+```bash
+# Run all tests once (used by CI)
+npm test
+
+# Watch mode while developing
+npm run test:watch
+
+# Run tests and print a coverage report for src/auth
+npm run test:coverage
+```
+
+### Where the tests live
+
+```
+test/
+├── tsconfig.json                 # Type-checking for tests (resolves @config)
+└── auth/
+    ├── domain/                   # Value objects: email, password
+    ├── application/              # Use cases: signup, login
+    └── helpers/                  # In-memory fakes (e.g. refresh token repository)
+```
+
+- Test files end with `.test.ts` and live in the root `test/` folder.
+- `vitest.config.mts` sets `NODE_ENV=test`, so `config/test.json` is loaded.
+- Use cases are tested with in-memory repositories, so no real database is used.
+- Route tests (login, `me`, refresh, logout) will be added after API-021.
+
 ## 🤝 Contributing
 
 1. Fork the project
