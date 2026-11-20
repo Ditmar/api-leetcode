@@ -19,9 +19,4 @@ prisma
     process.exit(1);
   });
 
-process.on('beforeExit', async () => {
-  await prisma.$disconnect();
-  logger.info('🔌 Disconnected from database');
-});
-
 export { prisma };
