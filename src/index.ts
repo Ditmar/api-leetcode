@@ -5,9 +5,7 @@ dotenv.config();
 import { config } from '@config';
 import logger from '@logger';
 import express, { Application, Request, Response } from 'express';
-import { AuthMiddleware } from './auth/infrastructure/middleware/auth-middleware';
 import { authRoutes } from './auth/infrastructure/routes/auth-routes';
-import { userRoutes } from './user/infrastructure/routes/user-routes';
 import { testRoutes } from './tests/infraestructure/routes/test-routes';
 import { courseRoutes } from './course/infrastructure/routes/course-routes';
 import { contestRoutes } from './contests/infrastructure/contests.router';
@@ -32,7 +30,6 @@ app.get('/', (req: Request, res: Response) => {
     endpoints: {
       health: '/health',
       auth: '/api/auth',
-      users: '/api/user',
       tests: '/api/tests',
       courses: '/api/courses',
     },
@@ -46,8 +43,9 @@ app.use('/health', (req: Request, res: Response) => {
   });
 });
 
+// API-006 (#60): legacy /api/user routes are disabled; code remains in Git history.
+// Profile/statistics replacement: API-032 (https://github.com/Ditmar/api-leetcode/issues/86).
 app.use('/api/auth', authRoutes);
-app.use('/api/user', AuthMiddleware.validateToken, userRoutes);
 app.use('/api/tests', testRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/contests', contestRoutes);
