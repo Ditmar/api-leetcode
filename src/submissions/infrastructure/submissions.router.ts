@@ -7,6 +7,7 @@ import { CreateSubmissionUseCase } from '../application/use-cases/create-submiss
 import { GetSubmissionByIdUseCase } from '../application/use-cases/get-submission-by-id.use-case';
 import { GetSubmissionsByUserUseCase } from '../application/use-cases/get-submissions-by-user.use-case';
 import { SubmissionsController } from './controllers/submissions.controller';
+import { asyncHandler } from '../../share/infrastructure/middleware/async-handler';
 
 const repository = new PrismaSubmissionRepository(getPrismaClient());
 const worker = new DefaultExecutionWorker();
@@ -21,17 +22,17 @@ const submissionsRouter = Router();
 submissionsRouter.post(
   '/submissions',
   AuthMiddleware.validateToken,
-  (req, res) => controller.create(req, res)
+  asyncHandler((req, res) => controller.create(req, res))
 );
 submissionsRouter.get(
   '/submissions/:id',
   AuthMiddleware.validateToken,
-  (req, res) => controller.getById(req, res)
+  asyncHandler((req, res) => controller.getById(req, res))
 );
 submissionsRouter.get(
   '/users/:id/submissions',
   AuthMiddleware.validateToken,
-  (req, res) => controller.getByUserId(req, res)
+  asyncHandler((req, res) => controller.getByUserId(req, res))
 );
 
 export { submissionsRouter };

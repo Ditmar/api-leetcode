@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { ExpressCourseController } from '../controller/express-course-controller';
 import { AuthMiddleware } from '../../../auth/infrastructure/middleware/auth-middleware';
+import { asyncHandler } from '../../../share/infrastructure/middleware/async-handler';
 
 const router = Router();
 const controller = new ExpressCourseController();
@@ -35,7 +36,10 @@ const controller = new ExpressCourseController();
  *                 data: { type: array, items: { $ref: '#/components/schemas/CourseResponse' } }
  *                 pagination: { $ref: '#/components/schemas/PaginationMeta' }
  */
-router.get('/', (req, res) => controller.getCourses(req, res));
+router.get(
+  '/',
+  asyncHandler((req, res) => controller.getCourses(req, res))
+);
 
 /**
  * @swagger
@@ -57,7 +61,10 @@ router.get('/', (req, res) => controller.getCourses(req, res));
  *       404:
  *         description: Curso no encontrado
  */
-router.get('/:id', (req, res) => controller.getCourseById(req, res));
+router.get(
+  '/:id',
+  asyncHandler((req, res) => controller.getCourseById(req, res))
+);
 
 /**
  * @swagger
@@ -83,8 +90,10 @@ router.get('/:id', (req, res) => controller.getCourseById(req, res));
  *       404:
  *         description: Curso no encontrado
  */
-router.post('/:id/enroll', AuthMiddleware.validateToken, (req, res) =>
-  controller.enrollInCourse(req, res)
+router.post(
+  '/:id/enroll',
+  AuthMiddleware.validateToken,
+  asyncHandler((req, res) => controller.enrollInCourse(req, res))
 );
 
 /**
@@ -104,8 +113,10 @@ router.post('/:id/enroll', AuthMiddleware.validateToken, (req, res) =>
  *       401:
  *         description: No autorizado
  */
-router.get('/me/courses', AuthMiddleware.validateToken, (req, res) =>
-  controller.getEnrolledCourses(req, res)
+router.get(
+  '/me/courses',
+  AuthMiddleware.validateToken,
+  asyncHandler((req, res) => controller.getEnrolledCourses(req, res))
 );
 
 export { router as courseRoutes };

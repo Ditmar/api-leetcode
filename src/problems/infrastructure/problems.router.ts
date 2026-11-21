@@ -10,6 +10,7 @@ import { GetTagsUseCase } from '../application/use-cases/get-tags.use-case';
 import { GetStatsUseCase } from '../application/use-cases/get-stats.use-case';
 import { CreateProblemUseCase } from '../application/use-cases/create-problem.use-case';
 import { UpdateProblemUseCase } from '../application/use-cases/update-problem.use-case';
+import { asyncHandler } from '../../share/infrastructure/middleware/async-handler';
 
 const repository = new PrismaProblemRepository(getPrismaClient());
 
@@ -60,7 +61,10 @@ const problemsRouter = Router();
  *                 data: { type: array, items: { $ref: '#/components/schemas/ProblemResponse' } }
  *                 pagination: { $ref: '#/components/schemas/PaginationMeta' }
  */
-problemsRouter.get('/', (req, res) => controller.list(req, res));
+problemsRouter.get(
+  '/',
+  asyncHandler((req, res) => controller.list(req, res))
+);
 
 /**
  * @swagger
@@ -78,7 +82,10 @@ problemsRouter.get('/', (req, res) => controller.list(req, res));
  *               properties:
  *                 tags: { type: array, items: { type: string } }
  */
-problemsRouter.get('/tags', (req, res) => controller.tags(req, res));
+problemsRouter.get(
+  '/tags',
+  asyncHandler((req, res) => controller.tags(req, res))
+);
 
 /**
  * @swagger
@@ -101,8 +108,10 @@ problemsRouter.get('/tags', (req, res) => controller.tags(req, res));
  *       401:
  *         description: No autorizado
  */
-problemsRouter.get('/stats', AuthMiddleware.validateToken, (req, res) =>
-  controller.stats(req, res)
+problemsRouter.get(
+  '/stats',
+  AuthMiddleware.validateToken,
+  asyncHandler((req, res) => controller.stats(req, res))
 );
 
 /**
@@ -125,7 +134,10 @@ problemsRouter.get('/stats', AuthMiddleware.validateToken, (req, res) =>
  *       404:
  *         description: Problema no encontrado
  */
-problemsRouter.get('/:id', (req, res) => controller.getById(req, res));
+problemsRouter.get(
+  '/:id',
+  asyncHandler((req, res) => controller.getById(req, res))
+);
 
 /**
  * @swagger
@@ -147,7 +159,10 @@ problemsRouter.get('/:id', (req, res) => controller.getById(req, res));
  *       404:
  *         description: Problema no encontrado
  */
-problemsRouter.get('/slug/:slug', (req, res) => controller.getBySlug(req, res));
+problemsRouter.get(
+  '/slug/:slug',
+  asyncHandler((req, res) => controller.getBySlug(req, res))
+);
 
 /**
  * @swagger
@@ -173,8 +188,10 @@ problemsRouter.get('/slug/:slug', (req, res) => controller.getBySlug(req, res));
  *       401:
  *         description: No autorizado
  */
-problemsRouter.post('/', AuthMiddleware.validateToken, (req, res) =>
-  controller.create(req, res)
+problemsRouter.post(
+  '/',
+  AuthMiddleware.validateToken,
+  asyncHandler((req, res) => controller.create(req, res))
 );
 
 /**
@@ -208,8 +225,10 @@ problemsRouter.post('/', AuthMiddleware.validateToken, (req, res) =>
  *       404:
  *         description: Problema no encontrado
  */
-problemsRouter.patch('/:id', AuthMiddleware.validateToken, (req, res) =>
-  controller.update(req, res)
+problemsRouter.patch(
+  '/:id',
+  AuthMiddleware.validateToken,
+  asyncHandler((req, res) => controller.update(req, res))
 );
 
 /**
@@ -233,8 +252,10 @@ problemsRouter.patch('/:id', AuthMiddleware.validateToken, (req, res) =>
  *       404:
  *         description: Problema no encontrado
  */
-problemsRouter.delete('/:id', AuthMiddleware.validateToken, (req, res) =>
-  controller.remove(req, res)
+problemsRouter.delete(
+  '/:id',
+  AuthMiddleware.validateToken,
+  asyncHandler((req, res) => controller.remove(req, res))
 );
 
 export { problemsRouter };
