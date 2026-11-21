@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { TestController } from '../controller/TestController';
-import { authMiddleware } from '../../../share/infrastructure/middleware/auth.middleware';
+import { AuthMiddleware } from '../../../auth/infrastructure/middleware/auth-middleware';
 
 const router = Router();
 const controller = new TestController();
@@ -83,7 +83,7 @@ router.get('/:id', (req, res) => controller.getTestById(req, res));
  *       404:
  *         description: Test no encontrado
  */
-router.post('/:id/start', authMiddleware, (req, res) =>
+router.post('/:id/start', AuthMiddleware.validateToken, (req, res) =>
   controller.startTest(req, res)
 );
 
@@ -114,7 +114,7 @@ router.post('/:id/start', authMiddleware, (req, res) =>
  *       404:
  *         description: Test no encontrado
  */
-router.get('/:id/questions', authMiddleware, (req, res) =>
+router.get('/:id/questions', AuthMiddleware.validateToken, (req, res) =>
   controller.getQuestions(req, res)
 );
 
@@ -147,7 +147,7 @@ router.get('/:id/questions', authMiddleware, (req, res) =>
  *       404:
  *         description: Test no encontrado
  */
-router.post('/:id/submit', authMiddleware, (req, res) =>
+router.post('/:id/submit', AuthMiddleware.validateToken, (req, res) =>
   controller.submitTest(req, res)
 );
 
