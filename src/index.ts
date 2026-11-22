@@ -30,6 +30,7 @@ app.get('/', (req: Request, res: Response) => {
     message: 'API is working correctly! 🚀',
     timestamp: new Date().toISOString(),
     endpoints: {
+      health: '/health',
       healthLive: '/health/live',
       healthReady: '/health/ready',
       auth: '/api/auth',
@@ -41,6 +42,14 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.get('/health/live', (req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'OK',
+    uptime: process.uptime(),
+  });
+});
+
+// Temporary compatibility route for existing health monitors
+app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({
     status: 'OK',
     uptime: process.uptime(),
