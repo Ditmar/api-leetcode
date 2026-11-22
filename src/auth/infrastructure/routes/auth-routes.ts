@@ -105,7 +105,7 @@ authRoutes.post('/login', (req, res) => authController.login(req, res));
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/LoginResponse'
+ *               $ref: '#/components/schemas/RefreshTokenResponse'
  *       401:
  *         description: Refresh Token inválido
  */

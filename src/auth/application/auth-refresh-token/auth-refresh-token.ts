@@ -1,16 +1,15 @@
 import { config } from '@config';
 import jwt, { SignOptions } from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 import { AuthRepository } from '../../domain/repository/auth-repository';
 import { RefreshTokenRepository } from '../../domain/repository/refresh-token-repository';
 import { RefreshTokenToken } from '../../domain/refresh-token-token';
+import { RefreshToken } from '../../domain/refresh-token';
 import {
   RefreshTokenNotFoundError,
   RefreshTokenExpiredError,
   RefreshTokenRevokedError,
 } from '../../domain/errors/refresh-token-errors';
-
-import { v4 as uuidv4 } from 'uuid';
-import { RefreshToken } from '../../domain/refresh-token';
 
 export interface RefreshTokenResponse {
   accessToken: string;
@@ -41,18 +40,12 @@ export class AuthRefreshToken {
       throw new RefreshTokenExpiredError();
     }
 
-    // Verify user still exists
     const user = await this.authRepository.findById(refreshToken.userId);
 
     if (!user) {
       throw new RefreshTokenNotFoundError('User not found');
     }
-    // Revoke the current refresh token before rotating it.
-    await this.refreshTokenRepository.revoke(
-      new RefreshTokenToken(refreshTokenValue)
-    );
 
-    // Generate a new refresh token.
     const newRefreshTokenValue = uuidv4();
 
     const newRefreshTokenExpiresAt = new Date(
@@ -65,9 +58,17 @@ export class AuthRefreshToken {
       user.id.getValue(),
       newRefreshTokenExpiresAt
     );
-    await this.refreshTokenRepository.create(newRefreshToken);
 
-    // Generate new access token
+    // Atomically revoke the old token and create the new one.
+    const rotated = await this.refreshTokenRepository.rotate(
+      new RefreshTokenToken(refreshTokenValue),
+      newRefreshToken
+    );
+
+    if (!rotated) {
+      throw new RefreshTokenRevokedError();
+    }
+
     const accessTokenOptions: SignOptions = {
       expiresIn: config.JWT.expiresIn,
       algorithm: 'HS256',

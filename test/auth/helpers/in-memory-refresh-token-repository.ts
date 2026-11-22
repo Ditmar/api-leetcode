@@ -27,6 +27,45 @@ export class InMemoryRefreshTokenRepository implements RefreshTokenRepository {
     found?.revoke();
   }
 
+  async revokeIfActive(token: RefreshTokenToken): Promise<boolean> {
+    const found = this.tokens.find(
+      t => t.token.getValue() === token.getValue()
+    );
+
+    if (!found || found.isRevoked.getValue()) {
+      return false;
+    }
+
+    found.revoke();
+    return true;
+  }
+
+  async rotate(
+    oldToken: RefreshTokenToken,
+    newRefreshToken: RefreshToken
+  ): Promise<boolean> {
+    const found = this.tokens.find(
+      t => t.token.getValue() === oldToken.getValue()
+    );
+
+    if (!found || found.isRevoked.getValue()) {
+      this.tokens
+        .filter(
+          t =>
+            t.userId.getValue() === newRefreshToken.userId.getValue() &&
+            !t.isRevoked.getValue()
+        )
+        .forEach(t => t.revoke());
+
+      return false;
+    }
+
+    found.revoke();
+    this.tokens.push(newRefreshToken);
+
+    return true;
+  }
+
   async revokeAllByUserId(userId: AuthUserId): Promise<void> {
     this.tokens
       .filter(t => t.userId.getValue() === userId.getValue())
