@@ -1,11 +1,8 @@
-/* eslint-env jest */
-/// <reference types="jest" />
-
-import { GetQuestionsUseCase } from './GetQuestionsUseCase';
-import type { TestRepository } from '../../domain/repositories/TestRepository';
-import type { Question } from '../../domain/entities/Question';
-import { splitProgrammingData } from '../../domain/entities/ProgrammingData';
-
+import { describe, it, expect } from 'vitest';
+import { GetQuestionsUseCase } from '../../../../src/tests/application/get-questions/GetQuestionsUseCase';
+import type { TestRepository } from '../../../../src/tests/domain/repositories/TestRepository';
+import type { Question } from '../../../../src/tests/domain/entities/Question';
+import { splitProgrammingData } from '../../../../src/tests/domain/entities/ProgrammingData';
 const TEST_ID = '11111111-1111-4111-8111-111111111111';
 const SESSION_ID = '22222222-2222-4222-8222-222222222222';
 const USER_ID = 'user-1';

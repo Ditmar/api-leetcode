@@ -1,13 +1,11 @@
-/* eslint-env jest */
-/// <reference types="jest" />
+import { describe, it, expect } from 'vitest';
 
-import { toProblemDetailDto } from './problem-response.dto';
+import { toProblemDetailDto } from '../../../../src/problems/application/dtos/problem-response.dto';
 import {
   Problem,
   StarterCode,
   TestCase,
-} from '../../domain/entities/problem.entity';
-
+} from '../../../../src/problems/domain/entities/problem.entity';
 const SECRET_EXAMPLE_OUTPUT = 'SECRET_EXAMPLE_OUTPUT_9f3a';
 const SECRET_HIDDEN_INPUT = 'SECRET_HIDDEN_INPUT_9f3a';
 const SECRET_HIDDEN_OUTPUT = 'SECRET_HIDDEN_OUTPUT_9f3a';
