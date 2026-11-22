@@ -149,3 +149,7 @@ api-leetcode
 The configuration files are managed using the `config` package. Each file corresponds to a specific environment:
 ## how decide the environment
 the library config automatically detects the environment based on the `NODE_ENV` environment variable. If `NODE_ENV` is not set, it defaults to `default.json`.
+
+## Architecture
+
+See the [architecture overview](https://github.com/Ditmar/leetcode-spa/blob/master/docs/architecture.md) for how the SPA, the API and the CD repository fit together, the folder rules, and where to put new code.
