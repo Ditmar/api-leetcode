@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
 const path = require('node:path');
 const { test } = require('node:test');
+const { JWT: testJwt } = require('../config/test.json');
 
 // Exercise the compiled startup validator with node-config's real file/env merge.
 const root = path.resolve(__dirname, '..');
@@ -53,6 +54,15 @@ for (const key of Object.keys(valid)) {
 }
 
 for (const key of ['JWT_SECRET', 'JWT_REFRESH_TOKEN_SECRET']) {
+  for (const field of ['secret', 'refreshTokenSecret']) {
+    test(`production rejects the test fixture's ${field} in ${key}`, () => {
+      const result = startup({ [key]: testJwt[field] });
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, new RegExp(key));
+      assert.ok(!result.stderr.includes(testJwt[field]));
+    });
+  }
+
   for (const value of [
     ' ',
     'short',

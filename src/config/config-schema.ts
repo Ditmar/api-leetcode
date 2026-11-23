@@ -1,5 +1,10 @@
 import * as z from 'zod';
 
+const testSigningSecrets = new Set([
+  'test-jwt-secret-32-char-minimum-value',
+  'test-refresh-token-secret-32-char-min',
+]);
+
 const knownPlaceholderPatterns = [
   'your_jwt_secret_key',
   'your_refresh_token_secret_key',
@@ -62,7 +67,10 @@ export const configSchema = z
       });
     }
 
-    if (jwtSecret && containsKnownPlaceholder(jwtSecret)) {
+    if (
+      containsKnownPlaceholder(jwtSecret) ||
+      (isProduction && testSigningSecrets.has(jwtSecret))
+    ) {
       ctx.addIssue({
         code: 'custom',
         path: ['JWT', 'secret'],
@@ -70,7 +78,10 @@ export const configSchema = z
       });
     }
 
-    if (refreshTokenSecret && containsKnownPlaceholder(refreshTokenSecret)) {
+    if (
+      containsKnownPlaceholder(refreshTokenSecret) ||
+      (isProduction && testSigningSecrets.has(refreshTokenSecret))
+    ) {
       ctx.addIssue({
         code: 'custom',
         path: ['JWT', 'refreshTokenSecret'],
