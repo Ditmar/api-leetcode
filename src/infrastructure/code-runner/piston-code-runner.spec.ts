@@ -1,9 +1,15 @@
-/* eslint-env jest */
-/// <reference types="jest" />
-
 import { configSchema } from '../../config/config-schema';
 import type { RunCodeResult } from '../../domain/code-runner/code-runner.interface';
 import { FakeCodeRunner } from './fake-code-runner';
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  afterEach,
+  vi,
+  type MockedFunction,
+} from 'vitest';
 import {
   PistonCodeRunner,
   PistonInfrastructureError,
@@ -24,10 +30,14 @@ describe('PistonCodeRunner', () => {
     python: { language: 'python', version: '3.10.0' },
   };
 
-  let mockFetch: jest.MockedFunction<typeof fetch>;
+  let mockFetch: MockedFunction<typeof fetch>;
 
   beforeEach(() => {
-    mockFetch = jest.fn() as unknown as jest.MockedFunction<typeof fetch>;
+    mockFetch = vi.fn() as unknown as MockedFunction<typeof fetch>;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   const createRunner = (
@@ -212,6 +222,81 @@ describe('PistonCodeRunner', () => {
       expect(stderrTimeoutResult.status).toBe('time_limit_exceeded');
     });
 
+    it('does not classify user stderr as timeout when code is zero', async () => {
+      mockFetch.mockResolvedValueOnce(
+        createJsonResponse({
+          language: 'python',
+          version: '3.10.0',
+          run: {
+            stdout: '',
+            stderr: 'warning: request timed out',
+            code: 0,
+            signal: null,
+          },
+        })
+      );
+
+      const runner = createRunner();
+      const result = await runner.run({
+        language: 'python',
+        files: [
+          {
+            content:
+              'import sys\nsys.stderr.write("warning: request timed out")',
+          },
+        ],
+      });
+
+      expect(result.status).toBe('success');
+    });
+
+    it('does not classify user stderr as memory exhausted when code is zero', async () => {
+      mockFetch.mockResolvedValueOnce(
+        createJsonResponse({
+          language: 'python',
+          version: '3.10.0',
+          run: {
+            stdout: '',
+            stderr: 'warning: MemoryError is only text',
+            code: 0,
+            signal: null,
+          },
+        })
+      );
+
+      const runner = createRunner();
+      const result = await runner.run({
+        language: 'python',
+        files: [{ content: 'print("ok")' }],
+      });
+
+      expect(result.status).toBe('success');
+    });
+
+    it('prioritizes Piston OOM status over a SIGKILL signal', async () => {
+      mockFetch.mockResolvedValueOnce(
+        createJsonResponse({
+          language: 'python',
+          version: '3.10.0',
+          run: {
+            stdout: '',
+            stderr: 'Killed',
+            code: null,
+            signal: 'SIGKILL',
+            status: 'OOM',
+          },
+        })
+      );
+
+      const runner = createRunner();
+      const result = await runner.run({
+        language: 'python',
+        files: [{ content: 'allocate_without_limit()' }],
+      });
+
+      expect(result.status).toBe('memory_limit_exceeded');
+    });
+
     it('maps non-zero compile exit code to compile_error', async () => {
       mockFetch.mockResolvedValueOnce(
         createJsonResponse({
@@ -293,6 +378,33 @@ describe('PistonCodeRunner', () => {
       expect(result.status).toBe('output_limit_exceeded');
       expect(Buffer.byteLength(result.run.stdout, 'utf8')).toBe(maxOutputBytes);
     });
+
+    it('truncates stderr exceeding PISTON_MAX_OUTPUT_SIZE_BYTES and sets status to output_limit_exceeded', async () => {
+      const maxOutputBytes = 64 * 1024;
+      const hugeStderr = 'e'.repeat(maxOutputBytes + 1024);
+
+      mockFetch.mockResolvedValueOnce(
+        createJsonResponse({
+          language: 'python',
+          version: '3.10.0',
+          run: {
+            stdout: '',
+            stderr: hugeStderr,
+            code: 1,
+            signal: null,
+          },
+        })
+      );
+
+      const runner = createRunner({ maxOutputSizeBytes: maxOutputBytes });
+      const result = await runner.run({
+        language: 'python',
+        files: [{ content: 'raise RuntimeError("error")' }],
+      });
+
+      expect(result.status).toBe('output_limit_exceeded');
+      expect(Buffer.byteLength(result.run.stderr, 'utf8')).toBe(maxOutputBytes);
+    });
   });
 
   describe('Input & code size validation', () => {
@@ -325,6 +437,48 @@ describe('PistonCodeRunner', () => {
   });
 
   describe('Retry policy and infrastructure error differentiation', () => {
+    it('retries execute requests aborted by their timeout signal as network failures', async () => {
+      vi.spyOn(AbortSignal, 'timeout').mockImplementation(() => {
+        const controller = new AbortController();
+        controller.abort(
+          new DOMException('The operation timed out', 'TimeoutError')
+        );
+        return controller.signal;
+      });
+      mockFetch.mockImplementation(
+        (_input, init) =>
+          new Promise((_resolve, reject) => {
+            const signal = init?.signal;
+            if (signal?.aborted) {
+              reject(signal.reason);
+              return;
+            }
+            signal?.addEventListener('abort', () => reject(signal.reason), {
+              once: true,
+            });
+          })
+      );
+
+      const runner = createRunner({
+        requestTimeoutMs: 25,
+        maxRetries: 2,
+        retryDelayMs: 1,
+      });
+
+      await expect(
+        runner.run({
+          language: 'javascript',
+          files: [{ content: 'console.log("hello");' }],
+        })
+      ).rejects.toThrow(PistonInfrastructureError);
+
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+      for (const [, init] of mockFetch.mock.calls) {
+        expect(init?.signal).toBeInstanceOf(AbortSignal);
+        expect(init?.signal?.aborted).toBe(true);
+      }
+    });
+
     it('retries up to 2 times (3 total attempts) on HTTP 500 errors and throws PistonInfrastructureError when all fail', async () => {
       mockFetch
         .mockResolvedValueOnce(createJsonResponse('Internal Server Error', 500))

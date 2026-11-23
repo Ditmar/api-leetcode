@@ -1,21 +1,19 @@
-/* eslint-env jest */
-/// <reference types="jest" />
-
 import { promises as fs } from 'fs';
+import { beforeEach, describe, expect, it, vi, type Mocked } from 'vitest';
 import { PythonExecutor } from './python.executor';
 import { DockerRunner, DockerRunOutput } from '../docker.runner';
 import { ExecutorInput } from '../executor.interface';
 
-jest.mock('fs', () => ({
+vi.mock('fs', () => ({
   promises: {
-    mkdtemp: jest.fn().mockResolvedValue('/tmp/mock-dir'),
-    writeFile: jest.fn().mockResolvedValue(undefined),
-    rm: jest.fn().mockResolvedValue(undefined),
+    mkdtemp: vi.fn().mockResolvedValue('/tmp/mock-dir'),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+    rm: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
 describe('PythonExecutor', () => {
-  let dockerRunner: jest.Mocked<DockerRunner>;
+  let dockerRunner: Mocked<DockerRunner>;
   let executor: PythonExecutor;
 
   const mockInput: ExecutorInput = {
@@ -28,10 +26,10 @@ describe('PythonExecutor', () => {
 
   beforeEach(() => {
     dockerRunner = {
-      run: jest.fn(),
-    } as unknown as jest.Mocked<DockerRunner>;
+      run: vi.fn(),
+    } as unknown as Mocked<DockerRunner>;
     executor = new PythonExecutor(dockerRunner);
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should call DockerRunner with the correct execution and security parameters', async () => {

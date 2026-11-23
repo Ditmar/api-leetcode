@@ -5,11 +5,14 @@
  * and can be executed in the CI pipeline.
  */
 import fs from 'fs/promises';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { CppExecutor } from './cpp.executor';
 import type { DockerRunner, DockerRunResult } from '../docker-runner';
 import type { ExecutorInput } from '../executor.interface';
 
-const okResult = (overrides: Partial<DockerRunResult> = {}): DockerRunResult => ({
+const okResult = (
+  overrides: Partial<DockerRunResult> = {}
+): DockerRunResult => ({
   stdout: '',
   stderr: '',
   exitCode: 0,
@@ -29,30 +32,30 @@ const buildInput = (overrides: Partial<ExecutorInput> = {}): ExecutorInput => ({
 });
 
 describe('CppExecutor', () => {
-  let mockRun: jest.Mock;
+  let mockRun: Mock;
   let runner: DockerRunner;
   let executor: CppExecutor;
 
   beforeEach(() => {
-    mockRun = jest.fn();
+    mockRun = vi.fn();
     runner = { run: mockRun } as unknown as DockerRunner;
     executor = new CppExecutor(runner);
   });
 
   it('normalizes CRLF and trailing spaces when comparing (does not flag wrong answer false)', async () => {
-  // compile ok, then a run whose stdout has \r\n and spaces at the end of the line
-  mockRun
-    .mockResolvedValueOnce(okResult({ exitCode: 0 })) // compile
-    .mockResolvedValueOnce(okResult({ stdout: '4 \r\n2 \r\n' })); // run
+    // compile ok, then a run whose stdout has \r\n and spaces at the end of the line
+    mockRun
+      .mockResolvedValueOnce(okResult({ exitCode: 0 })) // compile
+      .mockResolvedValueOnce(okResult({ stdout: '4 \r\n2 \r\n' })); // run
 
-  const input = buildInput({
-    testCases: [{ id: 'tc1', input: '', expectedOutput: '4\n2' }],
+    const input = buildInput({
+      testCases: [{ id: 'tc1', input: '', expectedOutput: '4\n2' }],
+    });
+
+    const result = await executor.execute(input);
+
+    expect(result.status).toBe('accepted');
   });
-
-  const result = await executor.execute(input);
-
-  expect(result.status).toBe('accepted');
-});
 
   it('returns "accepted" when compilation succeeds and output matches', async () => {
     mockRun
@@ -143,11 +146,14 @@ describe('CppExecutor', () => {
     expect(result.testCaseResults).toHaveLength(2);
     expect(result.testCaseResults[0]?.passed).toBe(true);
     expect(result.testCaseResults[1]?.passed).toBe(false);
-    expect(mockRun).toHaveBeenNthCalledWith(1, expect.objectContaining({ image: 'executor-cpp:latest', pidsLimit: 128 }));
-   });
+    expect(mockRun).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ image: 'executor-cpp:latest', pidsLimit: 128 })
+    );
+  });
 
   it('forwards the C++ sandbox hardening (pids-limit 32) and writes the test-case input to a file instead of piping stdin live', async () => {
-    const writeFileSpy = jest.spyOn(fs, 'writeFile');
+    const writeFileSpy = vi.spyOn(fs, 'writeFile');
     mockRun
       .mockResolvedValueOnce(okResult())
       .mockResolvedValueOnce(okResult({ stdout: '5\n' }));
@@ -176,7 +182,7 @@ describe('CppExecutor', () => {
         memoryMb: 128,
       })
     );
-    expect(mockRun.mock.calls[1][0]).not.toHaveProperty('stdin');
+    expect(mockRun.mock.calls[1]?.[0]).not.toHaveProperty('stdin');
 
     // The test case's input ("2 3") gets written to input.txt, which
     // run.sh redirects into the compiled binary's stdin.
