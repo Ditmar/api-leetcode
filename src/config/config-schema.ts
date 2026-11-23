@@ -46,10 +46,6 @@ export const configSchema = z
         .min(1, 'JWT_SECRET is required.'),
       expiresIn: z.coerce.number().min(1000),
       saltRounds: z.coerce.number().min(4).max(31),
-      refreshTokenSecret: z
-        .string({ error: 'JWT_REFRESH_TOKEN_SECRET is required.' })
-        .trim()
-        .min(1, 'JWT_REFRESH_TOKEN_SECRET is required.'),
       refreshTokenExpiresIn: z.coerce.number().min(1000),
     }),
   })
@@ -57,7 +53,6 @@ export const configSchema = z
     const isProduction = config.app.nodeEnv === 'production';
     const databaseUrl = config.database?.url ?? '';
     const jwtSecret = config.JWT?.secret ?? '';
-    const refreshTokenSecret = config.JWT?.refreshTokenSecret ?? '';
 
     if (databaseUrl && containsKnownPlaceholder(databaseUrl)) {
       ctx.addIssue({
@@ -78,18 +73,6 @@ export const configSchema = z
       });
     }
 
-    if (
-      containsKnownPlaceholder(refreshTokenSecret) ||
-      (isProduction && testSigningSecrets.has(refreshTokenSecret))
-    ) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['JWT', 'refreshTokenSecret'],
-        message:
-          'JWT_REFRESH_TOKEN_SECRET contains a known insecure placeholder value.',
-      });
-    }
-
     if (!isProduction) {
       return;
     }
@@ -102,33 +85,12 @@ export const configSchema = z
       });
     }
 
-    if (!jwtSecret.trim()) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['JWT', 'secret'],
-        message: 'JWT_SECRET is required in production.',
-      });
-    } else if (jwtSecret.trim().length < 32) {
+    if (jwtSecret.length < 32) {
       ctx.addIssue({
         code: 'custom',
         path: ['JWT', 'secret'],
         message:
           'JWT_SECRET must be at least 32 characters long in production.',
-      });
-    }
-
-    if (!refreshTokenSecret.trim()) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['JWT', 'refreshTokenSecret'],
-        message: 'JWT_REFRESH_TOKEN_SECRET is required in production.',
-      });
-    } else if (refreshTokenSecret.trim().length < 32) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['JWT', 'refreshTokenSecret'],
-        message:
-          'JWT_REFRESH_TOKEN_SECRET must be at least 32 characters long in production.',
       });
     }
   });
