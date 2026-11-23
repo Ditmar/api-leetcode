@@ -15,8 +15,11 @@ import { problemsRouter } from './problems/infrastructure/problems.router';
 import { configureSwagger } from './config/swagger.config';
 import { submissionsRouter } from './submissions/infrastructure/submissions.router';
 import { PistonCodeRunner } from './infrastructure/code-runner/piston-code-runner';
+import { prisma } from './share/infrastructure/prisma-client';
 
 const app: Application = express();
+let server: ReturnType<typeof app.listen> | undefined;
+let isShuttingDown = false;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -25,13 +28,14 @@ if (config.app.nodeEnv !== 'production') {
   configureSwagger(app);
 }
 
-// Public routes
 app.get('/', (req: Request, res: Response) => {
   res.json({
     message: 'API is working correctly! 🚀',
     timestamp: new Date().toISOString(),
     endpoints: {
       health: '/health',
+      healthLive: '/health/live',
+      healthReady: '/health/ready',
       auth: '/api/auth',
       users: '/api/user',
       tests: '/api/tests',
@@ -40,11 +44,35 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
-app.use('/health', (req: Request, res: Response) => {
-  res.json({
+app.get('/health/live', (req: Request, res: Response) => {
+  res.status(200).json({
     status: 'OK',
     uptime: process.uptime(),
   });
+});
+
+// Temporary compatibility route for existing health monitors
+app.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'OK',
+    uptime: process.uptime(),
+  });
+});
+
+app.get('/health/ready', async (req: Request, res: Response) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+
+    res.status(200).json({
+      status: 'ready',
+      database: 'connected',
+    });
+  } catch {
+    res.status(503).json({
+      status: 'unavailable',
+      database: 'disconnected',
+    });
+  }
 });
 
 app.use('/api/auth', authRoutes);
@@ -73,7 +101,9 @@ const startServer = async (): Promise<void> => {
     process.exit(1);
   }
 
-  const server = app.listen(config.app.port, () => {
+  if (isShuttingDown) return;
+
+  server = app.listen(config.app.port, () => {
     logger.info(`Server is running on port ${config.app.port}`);
 
     if (config.app.nodeEnv !== 'production') {
@@ -90,5 +120,59 @@ const startServer = async (): Promise<void> => {
 };
 
 void startServer();
+
+const shutdown = (signal: string): void => {
+  if (isShuttingDown) return;
+
+  isShuttingDown = true;
+  logger.info(`${signal} received. Starting graceful shutdown...`);
+
+  // Maximum shutdown time: 8 seconds
+  const activeServer = server;
+  const timeout = setTimeout(() => {
+    logger.error('Graceful shutdown timed out');
+    activeServer?.closeAllConnections();
+    process.exit(1);
+  }, 8000);
+
+  if (!activeServer) {
+    void prisma
+      .$disconnect()
+      .then(() => {
+        clearTimeout(timeout);
+        logger.info('Prisma disconnected');
+        process.exit(0);
+      })
+      .catch((err: unknown) => {
+        clearTimeout(timeout);
+        logger.error(`Prisma shutdown error: ${String(err)}`);
+        process.exit(1);
+      });
+    return;
+  }
+
+  // Stop accepting requests and wait for active requests
+  activeServer.close(async (error?: Error) => {
+    if (error) {
+      logger.error(`HTTP server close error: ${error.message}`);
+    }
+
+    try {
+      await prisma.$disconnect();
+
+      clearTimeout(timeout);
+      logger.info('Server closed: HTTP server and Prisma disconnected');
+
+      process.exit(error ? 1 : 0);
+    } catch (err) {
+      clearTimeout(timeout);
+      logger.error(`Prisma shutdown error: ${String(err)}`);
+      process.exit(1);
+    }
+  });
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 export default app;
