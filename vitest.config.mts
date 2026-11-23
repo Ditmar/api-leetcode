@@ -13,7 +13,12 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    include: ['test/**/*.test.ts'],
+    include: [
+      'test/**/*.test.ts',
+      'src/**/*.spec.ts',
+      'src/**/*.test.ts',
+      'worker/**/*.spec.ts',
+    ],
     env: { NODE_ENV: 'test' },
     coverage: {
       provider: 'v8',

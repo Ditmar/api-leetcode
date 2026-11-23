@@ -1,5 +1,4 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { expect, it } from 'vitest';
 import { CreateSubmissionUseCase } from '../application/use-cases/create-submission.use-case';
 import { GetSubmissionByIdUseCase } from '../application/use-cases/get-submission-by-id.use-case';
 import { Submission } from '../domain/entities/submission.entity';
@@ -37,7 +36,7 @@ class InMemorySubmissionRepository implements SubmissionRepository {
   }
 }
 
-test('DefaultExecutionWorker should reject empty code submissions', async () => {
+it('DefaultExecutionWorker should reject empty code submissions', async () => {
   const worker = new DefaultExecutionWorker();
   const submission = new Submission(
     'submission-empty',
@@ -53,10 +52,10 @@ test('DefaultExecutionWorker should reject empty code submissions', async () => 
 
   const processed = await worker.process(submission);
 
-  assert.equal(processed.getStatus(), 'rejected');
+  expect(processed.getStatus()).toBe('rejected');
 });
 
-test('CreateSubmissionUseCase should persist and process a submission', async () => {
+it('CreateSubmissionUseCase should persist and process a submission', async () => {
   const repository = new InMemorySubmissionRepository();
   const useCase = new CreateSubmissionUseCase(repository, {
     process: async submission =>
@@ -80,29 +79,27 @@ test('CreateSubmissionUseCase should persist and process a submission', async ()
     userId: 'user-1',
   });
 
-  assert.equal(created.getStatus(), 'accepted');
-  assert.equal(created.getProblemId(), 'problem-1');
-  assert.equal(created.getUserId(), 'user-1');
+  expect(created.getStatus()).toBe('accepted');
+  expect(created.getProblemId()).toBe('problem-1');
+  expect(created.getUserId()).toBe('user-1');
 });
 
-test('CreateSubmissionUseCase should require userId', async () => {
+it('CreateSubmissionUseCase should require userId', async () => {
   const repository = new InMemorySubmissionRepository();
   const useCase = new CreateSubmissionUseCase(repository, {
     process: async submission => submission,
   });
 
-  await assert.rejects(
-    () =>
-      useCase.execute({
-        problemId: 'problem-1',
-        language: 'typescript',
-        code: 'const answer = 42;',
-      } as never),
-    /userId is required/
-  );
+  await expect(() =>
+    useCase.execute({
+      problemId: 'problem-1',
+      language: 'typescript',
+      code: 'const answer = 42;',
+    } as never)
+  ).rejects.toThrow(/userId is required/);
 });
 
-test('GetSubmissionByIdUseCase should return an existing submission', async () => {
+it('GetSubmissionByIdUseCase should return an existing submission', async () => {
   const repository = new InMemorySubmissionRepository();
   const submission = new Submission(
     'submission-1',
@@ -120,11 +117,11 @@ test('GetSubmissionByIdUseCase should return an existing submission', async () =
   const useCase = new GetSubmissionByIdUseCase(repository);
   const result = await useCase.execute('submission-1');
 
-  assert.equal(result?.getId(), 'submission-1');
-  assert.equal(result?.getStatus(), 'pending');
+  expect(result?.getId()).toBe('submission-1');
+  expect(result?.getStatus()).toBe('pending');
 });
 
-test('SubmissionsController should reject invalid submission payloads', async () => {
+it('SubmissionsController should reject invalid submission payloads', async () => {
   const controller = new SubmissionsController(
     {
       execute: async () => {
@@ -156,12 +153,12 @@ test('SubmissionsController should reject invalid submission payloads', async ()
     res as never
   );
 
-  assert.equal(res.statusCode, 400);
-  assert.equal(typeof res.body?.message, 'string');
-  assert.ok(res.body!.message!.length > 0);
+  expect(res.statusCode).toBe(400);
+  expect(typeof res.body?.message).toBe('string');
+  expect(res.body!.message!.length).toBeGreaterThan(0);
 });
 
-test('SubmissionsController should forbid access to another user submission', async () => {
+it('SubmissionsController should forbid access to another user submission', async () => {
   const controller = new SubmissionsController(
     { execute: async () => null } as never,
     {
@@ -202,11 +199,11 @@ test('SubmissionsController should forbid access to another user submission', as
     res as never
   );
 
-  assert.equal(res.statusCode, 403);
-  assert.equal(res.body?.message, 'Forbidden');
+  expect(res.statusCode).toBe(403);
+  expect(res.body?.message).toBe('Forbidden');
 });
 
-test('SubmissionsController should forbid access to another user history', async () => {
+it('SubmissionsController should forbid access to another user history', async () => {
   const controller = new SubmissionsController(
     { execute: async () => null } as never,
     { execute: async () => null } as never,
@@ -235,6 +232,6 @@ test('SubmissionsController should forbid access to another user history', async
     res as never
   );
 
-  assert.equal(res.statusCode, 403);
-  assert.equal(res.body?.message, 'Forbidden');
+  expect(res.statusCode).toBe(403);
+  expect(res.body?.message).toBe('Forbidden');
 });

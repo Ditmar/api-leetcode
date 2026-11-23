@@ -14,9 +14,12 @@ import { contestRoutes } from './contests/infrastructure/contests.router';
 import { problemsRouter } from './problems/infrastructure/problems.router';
 import { configureSwagger } from './config/swagger.config';
 import { submissionsRouter } from './submissions/infrastructure/submissions.router';
+import { PistonCodeRunner } from './infrastructure/code-runner/piston-code-runner';
 import { prisma } from './share/infrastructure/prisma-client';
 
 const app: Application = express();
+let server: ReturnType<typeof app.listen> | undefined;
+let isShuttingDown = false;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -87,22 +90,36 @@ app.use('*', (req: Request, res: Response) => {
   });
 });
 
-const server = app.listen(config.app.port, () => {
-  logger.info(`Server is running on port ${config.app.port}`);
+const startServer = async (): Promise<void> => {
+  const codeRunner = new PistonCodeRunner();
 
-  if (config.app.nodeEnv !== 'production') {
-    logger.info(`Swagger is running on port ${config.app.port}/api-docs`);
+  try {
+    await codeRunner.validateRuntimes();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    logger.error(`Piston runtime validation failed: ${detail}`);
+    process.exit(1);
   }
 
-  logger.info(`Environment: ${config.app.nodeEnv}`);
-});
+  if (isShuttingDown) return;
 
-server.on('error', (err: Error) => {
-  logger.error(`Failed to start server: ${err.message}`);
-  process.exit(1);
-});
+  server = app.listen(config.app.port, () => {
+    logger.info(`Server is running on port ${config.app.port}`);
 
-let isShuttingDown = false;
+    if (config.app.nodeEnv !== 'production') {
+      logger.info(`Swagger is running on port ${config.app.port}/api-docs`);
+    }
+
+    logger.info(`Environment: ${config.app.nodeEnv}`);
+  });
+
+  server.on('error', (err: Error) => {
+    logger.error(`Failed to start server: ${err.message}`);
+    process.exit(1);
+  });
+};
+
+void startServer();
 
 const shutdown = (signal: string): void => {
   if (isShuttingDown) return;
@@ -111,14 +128,31 @@ const shutdown = (signal: string): void => {
   logger.info(`${signal} received. Starting graceful shutdown...`);
 
   // Maximum shutdown time: 8 seconds
+  const activeServer = server;
   const timeout = setTimeout(() => {
     logger.error('Graceful shutdown timed out');
-    server.closeAllConnections();
+    activeServer?.closeAllConnections();
     process.exit(1);
   }, 8000);
 
+  if (!activeServer) {
+    void prisma
+      .$disconnect()
+      .then(() => {
+        clearTimeout(timeout);
+        logger.info('Prisma disconnected');
+        process.exit(0);
+      })
+      .catch((err: unknown) => {
+        clearTimeout(timeout);
+        logger.error(`Prisma shutdown error: ${String(err)}`);
+        process.exit(1);
+      });
+    return;
+  }
+
   // Stop accepting requests and wait for active requests
-  server.close(async (error?: Error) => {
+  activeServer.close(async (error?: Error) => {
     if (error) {
       logger.error(`HTTP server close error: ${error.message}`);
     }
