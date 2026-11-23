@@ -70,6 +70,7 @@ export const configSchema = z.object({
     .int()
     .positive()
     .default(64 * 1024),
+  PISTON_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(20000),
   PISTON_LANGUAGE_MAP: pistonLanguageMapSchema,
 });
 

@@ -41,6 +41,7 @@ export interface PistonCodeRunnerOptions {
   memoryLimitBytes?: number;
   maxOutputSizeBytes?: number;
   maxCodeSizeBytes?: number;
+  requestTimeoutMs?: number;
   languageMap?: PistonLanguageMap;
   maxRetries?: number;
   retryDelayMs?: number;
@@ -103,6 +104,7 @@ export class PistonCodeRunner implements CodeRunner {
   private readonly memoryLimitBytes: number;
   private readonly maxOutputSizeBytes: number;
   private readonly maxCodeSizeBytes: number;
+  private readonly requestTimeoutMs: number;
   private readonly languageMap: PistonLanguageMap;
   private readonly maxRetries: number;
   private readonly retryDelayMs: number;
@@ -121,6 +123,8 @@ export class PistonCodeRunner implements CodeRunner {
       options.maxOutputSizeBytes ?? config.PISTON_MAX_OUTPUT_SIZE_BYTES;
     this.maxCodeSizeBytes =
       options.maxCodeSizeBytes ?? config.PISTON_MAX_CODE_SIZE_BYTES;
+    this.requestTimeoutMs =
+      options.requestTimeoutMs ?? config.PISTON_REQUEST_TIMEOUT_MS;
     this.languageMap = options.languageMap ?? config.PISTON_LANGUAGE_MAP;
     this.maxRetries = options.maxRetries ?? 2;
     this.retryDelayMs = options.retryDelayMs ?? 100;
@@ -164,7 +168,8 @@ export class PistonCodeRunner implements CodeRunner {
         method: 'POST',
         headers: this.buildHeaders(true),
         body: JSON.stringify(requestPayload),
-      }
+      },
+      Math.max(this.requestTimeoutMs, compileTimeout + runTimeout + 5000)
     );
     const wallTimeMs = Math.max(0, performance.now() - startWallTime);
 
@@ -206,6 +211,7 @@ export class PistonCodeRunner implements CodeRunner {
       response = await this.fetchFn(url, {
         method: 'GET',
         headers: this.buildHeaders(false),
+        signal: AbortSignal.timeout(this.requestTimeoutMs),
       });
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
@@ -316,14 +322,20 @@ export class PistonCodeRunner implements CodeRunner {
 
   private async executeWithRetry(
     url: string,
-    init: NonNullable<Parameters<typeof fetch>[1]>
+    init: NonNullable<Parameters<typeof fetch>[1]>,
+    requestTimeoutMs = this.requestTimeoutMs
   ): Promise<PistonExecuteResponsePayload> {
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       let response: Response;
 
       try {
-        response = await this.fetchFn(url, init);
+        response = await this.fetchFn(url, {
+          ...init,
+          signal: AbortSignal.timeout(requestTimeoutMs),
+        });
       } catch (error) {
+        // Treat connection errors, AbortError, and TimeoutError as
+        // infrastructure failures eligible for retry.
         if (attempt < this.maxRetries) {
           await this.delay(this.calculateBackoffMs(attempt));
           continue;
@@ -396,6 +408,7 @@ export class PistonCodeRunner implements CodeRunner {
     const rawStdout = rawStage.stdout ?? '';
     const rawStderr = rawStage.stderr ?? '';
     const stdoutResult = this.truncateUtf8(rawStdout, maxOutputSizeBytes);
+    const stderrResult = this.truncateUtf8(rawStderr, maxOutputSizeBytes);
     const outputResult =
       rawStage.output !== undefined
         ? this.truncateUtf8(rawStage.output, maxOutputSizeBytes)
@@ -403,7 +416,7 @@ export class PistonCodeRunner implements CodeRunner {
 
     const stageResult: StageResult = {
       stdout: stdoutResult.value,
-      stderr: rawStderr,
+      stderr: stderrResult.value,
       code: rawStage.code ?? null,
       signal: rawStage.signal ?? null,
       ...(outputResult !== undefined ? { output: outputResult.value } : {}),
@@ -411,7 +424,10 @@ export class PistonCodeRunner implements CodeRunner {
 
     return {
       stageResult,
-      outputTruncated: stdoutResult.truncated,
+      outputTruncated:
+        stdoutResult.truncated ||
+        stderrResult.truncated ||
+        (outputResult?.truncated ?? false),
     };
   }
 
@@ -443,11 +459,11 @@ export class PistonCodeRunner implements CodeRunner {
       if (compileOutputTruncated) {
         return 'output_limit_exceeded';
       }
-      if (this.isTimeout(compileStage, rawCompile)) {
-        return 'time_limit_exceeded';
-      }
       if (this.isMemoryLimitExceeded(compileStage, rawCompile)) {
         return 'memory_limit_exceeded';
+      }
+      if (this.isTimeout(compileStage, rawCompile)) {
+        return 'time_limit_exceeded';
       }
       if (
         (compileStage.code !== null && compileStage.code !== 0) ||
@@ -461,12 +477,12 @@ export class PistonCodeRunner implements CodeRunner {
       return 'output_limit_exceeded';
     }
 
-    if (this.isTimeout(runStage, rawRun)) {
-      return 'time_limit_exceeded';
-    }
-
     if (this.isMemoryLimitExceeded(runStage, rawRun)) {
       return 'memory_limit_exceeded';
+    }
+
+    if (this.isTimeout(runStage, rawRun)) {
+      return 'time_limit_exceeded';
     }
 
     if (
@@ -479,6 +495,17 @@ export class PistonCodeRunner implements CodeRunner {
     return 'success';
   }
 
+  /**
+   * Determines whether the stage was killed due to a timeout.
+   *
+   * Priority:
+   *   1. Piston's `signal` field (SIGKILL, SIGTERM, SIGXCPU)
+   *   2. Piston's `status` field ('TO' = timeout)
+   *   3. Piston's `message` field (controlled by Piston, not user code)
+   *   4. stderr is used ONLY as a fallback when `code !== 0`
+   *      (prevents user code that prints "timed out" to stderr
+   *       with exit code 0 from being misclassified as TLE)
+   */
   private isTimeout(stage: StageResult, rawStage: PistonStagePayload): boolean {
     if (stage.signal !== null && TIMEOUT_SIGNALS.has(stage.signal)) {
       return true;
@@ -488,16 +515,59 @@ export class PistonCodeRunner implements CodeRunner {
       return true;
     }
 
-    const combinedDiagnostics = `${stage.stderr}\n${rawStage.message ?? ''}`;
-    return TIMEOUT_STDERR_PATTERN.test(combinedDiagnostics);
+    // Piston's `message` is infrastructure-controlled, safe to inspect always
+    if (rawStage.message && TIMEOUT_STDERR_PATTERN.test(rawStage.message)) {
+      return true;
+    }
+
+    // stderr is user-controlled: only inspect when exit code is non-zero
+    if (
+      stage.code !== null &&
+      stage.code !== 0 &&
+      TIMEOUT_STDERR_PATTERN.test(stage.stderr)
+    ) {
+      return true;
+    }
+
+    return false;
   }
 
+  /**
+   * Determines whether the stage was killed due to exceeding memory limits.
+   *
+   * Priority:
+   *   1. Piston's `message` field (infrastructure-controlled)
+   *   2. stderr is used ONLY as a fallback when `code !== 0`
+   *      (prevents user code that prints "MemoryError" to stderr
+   *       with exit code 0 from being misclassified as MLE)
+   */
   private isMemoryLimitExceeded(
     stage: StageResult,
     rawStage: PistonStagePayload
   ): boolean {
-    const combinedDiagnostics = `${stage.stderr}\n${rawStage.message ?? ''}`;
-    return MEMORY_LIMIT_PATTERN.test(combinedDiagnostics);
+    if (
+      rawStage.status === 'ML' ||
+      rawStage.status === 'OOM' ||
+      rawStage.status === 'MEMORY_LIMIT_EXCEEDED'
+    ) {
+      return true;
+    }
+
+    // Piston's `message` is infrastructure-controlled, safe to inspect always
+    if (rawStage.message && MEMORY_LIMIT_PATTERN.test(rawStage.message)) {
+      return true;
+    }
+
+    // stderr is user-controlled: only inspect when exit code is non-zero
+    if (
+      stage.code !== null &&
+      stage.code !== 0 &&
+      MEMORY_LIMIT_PATTERN.test(stage.stderr)
+    ) {
+      return true;
+    }
+
+    return false;
   }
 
   private calculateBackoffMs(attempt: number): number {

@@ -14,6 +14,7 @@ import { contestRoutes } from './contests/infrastructure/contests.router';
 import { problemsRouter } from './problems/infrastructure/problems.router';
 import { configureSwagger } from './config/swagger.config';
 import { submissionsRouter } from './submissions/infrastructure/submissions.router';
+import { PistonCodeRunner } from './infrastructure/code-runner/piston-code-runner';
 
 const app: Application = express();
 
@@ -61,19 +62,33 @@ app.use('*', (req: Request, res: Response) => {
   });
 });
 
-const server = app.listen(config.app.port, () => {
-  logger.info(`Server is running on port ${config.app.port}`);
+const startServer = async (): Promise<void> => {
+  const codeRunner = new PistonCodeRunner();
 
-  if (config.app.nodeEnv !== 'production') {
-    logger.info(`Swagger is running on port ${config.app.port}/api-docs`);
+  try {
+    await codeRunner.validateRuntimes();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    logger.error(`Piston runtime validation failed: ${detail}`);
+    process.exit(1);
   }
 
-  logger.info(`Environment: ${config.app.nodeEnv}`);
-});
+  const server = app.listen(config.app.port, () => {
+    logger.info(`Server is running on port ${config.app.port}`);
 
-server.on('error', (err: Error) => {
-  logger.error(`Failed to start server: ${err.message}`);
-  process.exit(1);
-});
+    if (config.app.nodeEnv !== 'production') {
+      logger.info(`Swagger is running on port ${config.app.port}/api-docs`);
+    }
+
+    logger.info(`Environment: ${config.app.nodeEnv}`);
+  });
+
+  server.on('error', (err: Error) => {
+    logger.error(`Failed to start server: ${err.message}`);
+    process.exit(1);
+  });
+};
+
+void startServer();
 
 export default app;
