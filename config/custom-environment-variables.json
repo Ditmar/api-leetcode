@@ -1,7 +1,7 @@
 {
   "app": {
     "port": "PORT",
-    "nodeEnv": "ENV",
+    "nodeEnv": "NODE_ENV",
     "logLevel": "LOG_LEVEL"
   },
   "database": {
