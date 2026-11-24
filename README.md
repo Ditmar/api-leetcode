@@ -257,3 +257,7 @@ Commit convention
 feat(auth): add Google login
 fix(api): fix timeout on submissions endpoint
 chore: release v0.1.0   # generated automatically by release-it, do not write by hand
+
+## Architecture
+
+See the [architecture overview](https://github.com/Ditmar/leetcode-spa/blob/next/docs/architecture.md) for how the SPA, the API and the CD repository fit together, the folder rules, and where to put new code.
