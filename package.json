@@ -12,6 +12,7 @@
     "format": "npx prettier --write src/**/*.ts",
     "prepare": "npx husky install",
     "test": "vitest run",
+    "test:config": "npm run build && node --test scripts/config.test.cjs",
     "db:up": "docker compose -f ./local-database/database.yaml up -d",
     "prisma:migrate": "npx prisma migrate dev",
     "test:watch": "vitest",
