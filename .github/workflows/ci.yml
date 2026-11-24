@@ -30,6 +30,8 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm test
       - run: npm run build
+      - name: Test configuration validation
+        run: node --test scripts/config.test.cjs
       - name: Audit production dependencies
         continue-on-error: true
         run: npm audit --omit=dev
