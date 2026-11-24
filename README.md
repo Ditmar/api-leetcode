@@ -47,7 +47,7 @@ npm run format
 npm run dev
 ```
 
-The server will run at `http://localhost:3001`
+The server will run at `http://localhost:3000`
 
 ### Production
 
