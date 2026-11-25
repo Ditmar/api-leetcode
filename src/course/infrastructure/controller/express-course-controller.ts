@@ -60,14 +60,14 @@ export class ExpressCourseController {
           .json({ success: false, error: 'Course ID is required' });
         return;
       }
-      if (!this.isValidUUID(id)) {
+      if (!this.isValidUUID(id.toString())) {
         res
           .status(400)
           .json({ success: false, error: 'Invalid course ID format' });
         return;
       }
 
-      const course = await services.course.getById.execute(id);
+      const course = await services.course.getById.execute(id.toString());
       res.status(200).json({ success: true, data: course });
     } catch (error) {
       if (error instanceof CourseNotFoundError) {
@@ -90,7 +90,7 @@ export class ExpressCourseController {
           .json({ success: false, error: 'Course ID is required' });
         return;
       }
-      if (!this.isValidUUID(id)) {
+      if (!this.isValidUUID(id.toString())) {
         res
           .status(400)
           .json({ success: false, error: 'Invalid course ID format' });
@@ -103,7 +103,10 @@ export class ExpressCourseController {
         return;
       }
 
-      const result = await services.course.enroll.execute(userId, id);
+      const result = await services.course.enroll.execute(
+        userId,
+        id.toString()
+      );
       res.status(201).json({
         success: true,
         message: 'Successfully enrolled in course',

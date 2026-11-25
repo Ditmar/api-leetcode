@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient({
   log:
-    config.app.nodeEnv === 'dev'
+    config.app.nodeEnv === 'development'
       ? ['query', 'info', 'warn', 'error']
       : ['error'],
 });
@@ -18,10 +18,5 @@ prisma
     logger.error(`Failed to connect to database: ${error.message}`);
     process.exit(1);
   });
-
-process.on('beforeExit', async () => {
-  await prisma.$disconnect();
-  logger.info('🔌 Disconnected from database');
-});
 
 export { prisma };

@@ -1,16 +1,5 @@
 import { TestRepository } from '../../domain/repositories/TestRepository';
-
-interface QuestionData {
-  id: string;
-  type: string;
-  text: string;
-  difficulty: string;
-  points: number;
-  timeLimit?: number | null;
-  order: number;
-  options?: Record<string, unknown> | null;
-  programmingData?: Record<string, unknown> | null;
-}
+import { toPublicQuestionDto } from '../dtos/public-question.dto';
 
 export class GetQuestionsUseCase {
   constructor(private testRepo: TestRepository) {}
@@ -46,33 +35,7 @@ export class GetQuestionsUseCase {
 
     const questions = await this.testRepo.getQuestionsByTestId(testId);
 
-    const formattedQuestions = questions.map((q: QuestionData) => {
-      const baseQuestion = {
-        id: q.id,
-        type: q.type,
-        text: q.text,
-        difficulty: q.difficulty,
-        points: q.points,
-        timeLimit: q.timeLimit,
-        order: q.order,
-      };
-
-      if (q.type === 'MCQ' && q.options) {
-        return {
-          ...baseQuestion,
-          options: q.options,
-        };
-      }
-
-      if (q.type === 'PROGRAMMING' && q.programmingData) {
-        return {
-          ...baseQuestion,
-          programmingData: q.programmingData,
-        };
-      }
-
-      return baseQuestion;
-    });
+    const formattedQuestions = questions.map(toPublicQuestionDto);
 
     return {
       sessionId: session.id,
