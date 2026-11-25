@@ -1,76 +1,108 @@
-name: Build and Push Docker Image 
-on: 
-  pull_request:
-    branches:
-      - next
-      - master
-    
-  push:
-    branches:
-       - next
-       - master
+name: CI
 
+on:
+  push:
+    branches: ['**']
+  pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ditmar/api-leetcode
+
 jobs:
-  validate: 
+  quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    if: github.event_name == 'pull_request' 
+    timeout-minutes: 20
+    outputs:
+      version: ${{ steps.metadata.outputs.version }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
-      - name: Run test
-        run: npm test
-      - name: Set DATABASE_URL environment variable
-        run: echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV
-      - name: Prisma generate
-        run: npx prisma generate
-      - name: Build app
-        run: npm run build
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm test
+      - run: npm run build
       - name: Test configuration validation
         run: node --test scripts/config.test.cjs
-
-  build-and-push:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    if: github.event_name == 'push'
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Audit production dependencies
+        continue-on-error: true
+        run: npm audit --omit=dev
+      - name: Read image metadata
+        id: metadata
+        run: |
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse --short=12 HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+        if: github.event_name != 'push' || github.ref != 'refs/heads/master'
+      - name: Build development image
+        if: github.event_name != 'push' || github.ref != 'refs/heads/master'
+        uses: docker/build-push-action@v6
         with:
-          node-version: '22'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
-      - name: Set DATABASE_URL environment variable
-        run: echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> $GITHUB_ENV
-      - name: Prisma generate
-        run: npx prisma generate
-      - name: Build app 
-        run: npm run build
-      - name: Get package json version
-        run: echo "VERSION=$(node -p -e "require('./package.json').version")" >> $GITHUB_ENV
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+          push: false
+          tags: ${{ env.IMAGE }}:${{ steps.metadata.outputs.version }}-${{ steps.metadata.outputs.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  publish:
+    needs: quality
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: publish-api-leetcode-stable
+      cancel-in-progress: false
+    env:
+      VERSION: ${{ needs.quality.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require a stable version
+        run: |
+          if [[ ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Expected a stable package version, got $VERSION"
+            exit 1
+          fi
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push image
+      - name: Check stable tag availability
+        shell: bash
+        env:
+          HUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          HUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          token=$(curl --fail --silent --show-error --user "$HUB_USER:$HUB_TOKEN" \
+            "https://auth.docker.io/token?service=registry.docker.io&scope=repository:$IMAGE:pull" | node -pe 'JSON.parse(require("fs").readFileSync(0)).token || process.exit(1)')
+          body="$RUNNER_TEMP/manifest.json"
+          status=$(curl --silent --show-error --output "$body" --write-out '%{http_code}' \
+            --header "Authorization: Bearer $token" \
+            --header 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json' \
+            "https://registry-1.docker.io/v2/$IMAGE/manifests/$VERSION")
+          if [[ "$status" == 200 ]]; then
+            echo "::error::Image $IMAGE:$VERSION already exists. Choose a new version."
+            exit 1
+          fi
+          if [[ "$status" != 404 ]] || ! node -e '
+            const { errors } = JSON.parse(require("fs").readFileSync(process.argv[1]))
+            process.exit(errors?.length === 1 && errors[0].code === "MANIFEST_UNKNOWN" ? 0 : 1)
+          ' "$body"; then
+            echo "::error::Cannot confirm that $IMAGE:$VERSION is available (HTTP $status)."
+            exit 1
+          fi
+      - name: Publish stable image
         uses: docker/build-push-action@v6
         with:
-          context: .
           push: true
           provenance: false
-          tags: ditmar/api-leetcode:${{ env.VERSION }}
+          tags: ${{ env.IMAGE }}:${{ env.VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
