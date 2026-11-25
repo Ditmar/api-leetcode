@@ -12,5 +12,13 @@
     "expiresIn": "JWT_EXPIRES_IN",
     "saltRounds": "JWT_SALT_ROUNDS",
     "refreshTokenExpiresIn": "JWT_REFRESH_TOKEN_EXPIRES_IN"
+  },
+  "security": {
+    "corsOrigin": "CORS_ORIGIN",
+    "trustProxy": "TRUST_PROXY",
+    "rateLimitWindowMs": "RATE_LIMIT_WINDOW_MS",
+    "rateLimitMax": "RATE_LIMIT_MAX",
+    "authRateLimitMax": "AUTH_RATE_LIMIT_MAX",
+    "requestTimeoutMs": "REQUEST_TIMEOUT_MS"
   }
 }
