@@ -1,0 +1,12 @@
+node_modules
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+dist
+coverage
+.husky
+.vscode
+local-database
+README.md

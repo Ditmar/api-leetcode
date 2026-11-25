@@ -257,3 +257,15 @@ Commit convention
 feat(auth): add Google login
 fix(api): fix timeout on submissions endpoint
 chore: release v0.1.0   # generated automatically by release-it, do not write by hand
+## Docker (Local Production Test)
+
+1. Start the local database:
+npm run db:up
+
+2. Build the Docker image:
+docker build -t api-leetcode:latest .
+
+3. Run the API container against the local database:
+docker run --rm -p 3000:3000 --env-file .env api-leetcode:latest
+
+Note: On Windows/Mac Docker Desktop, replace localhost with host.docker.internal in DATABASE_URL so the container can reach the host database.
