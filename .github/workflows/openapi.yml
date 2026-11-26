@@ -1,0 +1,29 @@
+name: Validate OpenAPI
+
+on:
+  pull_request:
+    branches:
+      - next
+      - master
+    paths:
+      - 'openapi.yaml'
+      - '.github/workflows/openapi.yml'
+
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate OpenAPI document
+        run: npx --yes @apidevtools/swagger-cli validate openapi.yaml
