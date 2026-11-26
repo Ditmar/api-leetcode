@@ -1,0 +1,2184 @@
+openapi: 3.0.0
+info:
+  title: OpenAPI API
+  version: 1.0.0
+  description: API Documentation
+servers:
+  - url: http://localhost:3000
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    userIdHeader:
+      type: apiKey
+      in: header
+      name: x-user-id
+  schemas:
+    PaginationMeta:
+      type: object
+      required: [total, page, limit, totalPages]
+      properties:
+        total:
+          type: integer
+          example: 100
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        totalPages:
+          type: integer
+          example: 10
+    SignupRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          example: john@example.com
+        password:
+          type: string
+          example: "12345678"
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          example: john@example.com
+        password:
+          type: string
+          example: "12345678"
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refreshToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: clz123456789
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          example: john@example.com
+        createdAt:
+          type: string
+          format: date-time
+    ProblemResponse:
+      type: object
+      required:
+        - id
+        - slug
+        - title
+        - difficulty
+        - tags
+        - acceptedCount
+        - submissionCount
+        - acceptanceRate
+        - isActive
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        title:
+          type: string
+        difficulty:
+          type: string
+          enum: [EASY, MEDIUM, HARD]
+        tags:
+          type: array
+          items:
+            type: string
+        acceptedCount:
+          type: integer
+        submissionCount:
+          type: integer
+        acceptanceRate:
+          type: number
+        isActive:
+          type: boolean
+      example:
+        id: "550e8400-e29b-41d4-a716-446655440000"
+        slug: "two-sum"
+        title: "Two Sum"
+        difficulty: EASY
+        tags: ["arrays", "hash-table"]
+        acceptedCount: 80
+        submissionCount: 100
+        acceptanceRate: 80
+        isActive: true
+    ProblemDetailResponse:
+      type: object
+      required:
+        - id
+        - slug
+        - title
+        - difficulty
+        - tags
+        - acceptedCount
+        - submissionCount
+        - acceptanceRate
+        - isActive
+        - description
+        - constraints
+        - testCases
+        - starterCodes
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        title:
+          type: string
+        difficulty:
+          type: string
+          enum: [EASY, MEDIUM, HARD]
+        tags:
+          type: array
+          items:
+            type: string
+        acceptedCount:
+          type: integer
+        submissionCount:
+          type: integer
+        acceptanceRate:
+          type: number
+        isActive:
+          type: boolean
+        description:
+          type: string
+        constraints:
+          type: array
+          items:
+            type: string
+        testCases:
+          type: array
+          description: Only public test cases are included.
+          items:
+            type: object
+            required: [id, input, explanation, order]
+            properties:
+              id:
+                type: string
+                format: uuid
+              input:
+                type: string
+              explanation:
+                type: string
+                nullable: true
+              order:
+                type: integer
+        starterCodes:
+          type: array
+          items:
+            type: object
+            required: [id, language, code]
+            properties:
+              id:
+                type: string
+                format: uuid
+              language:
+                type: string
+              code:
+                type: string
+      example:
+        id: 550e8400-e29b-41d4-a716-446655440000
+        slug: two-sum
+        title: Two Sum
+        difficulty: EASY
+        tags:
+        - arrays
+        - hash-table
+        acceptedCount: 80
+        submissionCount: 100
+        acceptanceRate: 80
+        isActive: true
+        description: Find the indices of two numbers that add up to the target.
+        constraints:
+        - 2 <= nums.length <= 10000
+        testCases:
+        - id: 550e8400-e29b-41d4-a716-446655440001
+          input: '[2,7,11,15], 9'
+          explanation: The first two numbers add up to 9.
+          order: 1
+        starterCodes:
+        - id: 550e8400-e29b-41d4-a716-446655440002
+          language: javascript
+          code: function twoSum(nums, target) {}
+    CreateProblemRequest:
+      type: object
+      required:
+        - slug
+        - title
+        - description
+        - difficulty
+        - tags
+        - constraints
+        - testCases
+        - starterCodes
+      properties:
+        slug:
+          type: string
+          example: two-sum
+        title:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: string
+          enum:
+            - EASY
+            - MEDIUM
+            - HARD
+        tags:
+          type: array
+          items:
+            type: string
+        constraints:
+          type: array
+          items:
+            type: string
+        testCases:
+          type: array
+          items:
+            type: object
+            properties:
+              input:
+                type: string
+              expectedOutput:
+                type: string
+              explanation:
+                type: string
+              isExample:
+                type: boolean
+              order:
+                type: integer
+            required:
+              - input
+              - expectedOutput
+              - isExample
+              - order
+        starterCodes:
+          type: array
+          items:
+            type: object
+            properties:
+              language:
+                type: string
+              code:
+                type: string
+            required:
+              - language
+              - code
+    UpdateProblemRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: string
+          enum:
+            - EASY
+            - MEDIUM
+            - HARD
+        tags:
+          type: array
+          items:
+            type: string
+        constraints:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+    ContestProblemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        problemId:
+          type: string
+        order:
+          type: integer
+        points:
+          type: integer
+        problem:
+          type: object
+          properties:
+            id:
+              type: string
+            title:
+              type: string
+            description:
+              type: string
+            difficulty:
+              type: string
+              enum:
+                - EASY
+                - MEDIUM
+                - HARD
+    ContestResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: string
+        status:
+          type: string
+          enum:
+            - UPCOMING
+            - ACTIVE
+            - FINISHED
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        durationMins:
+          type: integer
+        prize:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        problems:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContestProblemResponse"
+      example:
+        id: 550e8400-e29b-41d4-a716-446655440010
+        title: Weekly Coding Challenge
+        description: Solve a set of programming problems.
+        difficulty: MEDIUM
+        status: UPCOMING
+        startTime: '2026-12-01T14:00:00Z'
+        endTime: '2026-12-01T16:00:00Z'
+        durationMins: 120
+        prize: null
+        isActive: true
+        createdAt: '2026-11-26T12:00:00Z'
+        updatedAt: '2026-11-26T12:00:00Z'
+        problems:
+        - id: 550e8400-e29b-41d4-a716-446655440011
+          problemId: 550e8400-e29b-41d4-a716-446655440000
+          order: 1
+          points: 100
+          problem:
+            id: 550e8400-e29b-41d4-a716-446655440000
+            title: Two Sum
+            description: Find two numbers that add up to the target.
+            difficulty: EASY
+    CreateContestRequest:
+      type: object
+      required:
+        - title
+        - description
+        - difficulty
+        - startTime
+        - endTime
+        - problems
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: string
+          enum:
+            - EASY
+            - MEDIUM
+            - HARD
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        prize:
+          type: string
+          nullable: true
+        problems:
+          type: array
+          items:
+            type: object
+            properties:
+              problemId:
+                type: string
+              order:
+                type: integer
+              points:
+                type: integer
+            required:
+              - problemId
+              - order
+              - points
+      example:
+        title: Weekly Coding Challenge
+        description: Solve a set of programming problems.
+        difficulty: MEDIUM
+        startTime: '2026-12-01T14:00:00Z'
+        endTime: '2026-12-01T16:00:00Z'
+        prize: null
+        problems:
+        - problemId: 550e8400-e29b-41d4-a716-446655440000
+          order: 1
+          points: 100
+    RegisterResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Registered successfully
+    ContestStatsResponse:
+      type: object
+      properties:
+        totalContests:
+          type: integer
+        activeContests:
+          type: integer
+      example:
+        totalContests: 10
+        activeContests: 2
+    CourseResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        numberOfLessons:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      example:
+        id: 550e8400-e29b-41d4-a716-446655440020
+        title: Introduction to Algorithms
+        description: Fundamentals of algorithms and data structures.
+        numberOfLessons: 12
+        isActive: true
+        createdAt: '2026-11-26T12:00:00Z'
+    EnrollRequest:
+      type: object
+      properties: {}
+      example: {}
+    EnrolledCoursesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseResponse"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+    TestResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        company:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            logo:
+              type: string
+              nullable: true
+        difficulty:
+          type: string
+          enum:
+            - EASY
+            - MEDIUM
+            - HARD
+        duration:
+          type: integer
+        totalQuestions:
+          type: integer
+        questionsByType:
+          type: object
+          properties:
+            mcq:
+              type: integer
+            programming:
+              type: integer
+        createdAt:
+          type: string
+          format: date-time
+    TestDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/TestResponse"
+      properties:
+        questions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+                enum:
+                  - MCQ
+                  - PROGRAMMING
+              question:
+                type: string
+              options:
+                type: array
+                items:
+                  type: string
+    StartTestResponse:
+      type: object
+      properties:
+        testId:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+    SubmitTestRequest:
+      type: object
+      required:
+        - sessionId
+        - answers
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          description: Test session identifier
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        answers:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: object
+            required:
+              - questionId
+            properties:
+              questionId:
+                type: string
+                format: uuid
+              selectedOption:
+                type: string
+                maxLength: 500
+              code:
+                type: string
+                maxLength: 50000
+              language:
+                type: string
+                maxLength: 50
+          example:
+            - questionId: "550e8400-e29b-41d4-a716-446655440002"
+              selectedOption: "option-1"
+    SubmitTestResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          required:
+            - submissionId
+            - score
+            - maxScore
+            - percentage
+            - passed
+            - breakdown
+            - submittedAt
+          properties:
+            submissionId:
+              type: string
+              format: uuid
+            score:
+              type: number
+            maxScore:
+              type: number
+            percentage:
+              type: number
+            passed:
+              type: boolean
+            breakdown:
+              type: object
+              properties:
+                correct:
+                  type: integer
+                incorrect:
+                  type: integer
+                total:
+                  type: integer
+            submittedAt:
+              type: string
+              format: date-time
+      example:
+        success: true
+        data:
+          submissionId: "550e8400-e29b-41d4-a716-446655440003"
+          score: 10
+          maxScore: 20
+          percentage: 50
+          passed: false
+          breakdown:
+            correct: 1
+            incorrect: 1
+            total: 2
+          submittedAt: "2026-11-26T12:00:00Z"
+    CreateUserRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          example: New User
+        email:
+          type: string
+          example: new.user@example.com
+        password:
+          type: string
+          example: secure123
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+    CreateSubmissionRequest:
+      type: object
+      required:
+        - problemId
+        - language
+        - code
+      properties:
+        problemId:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+        language:
+          type: string
+          enum:
+            - javascript
+            - typescript
+            - python
+            - java
+            - cpp
+            - c
+            - go
+            - rust
+          example: javascript
+        code:
+          type: string
+          maxLength: 20000
+          example: console.log('Hello, world!');
+    SubmissionResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: uuid
+        _problemId:
+          type: string
+        _userId:
+          type: string
+        _language:
+          type: string
+        _code:
+          type: string
+        _status:
+          type: string
+          enum:
+            - pending
+            - accepted
+            - rejected
+        _runtime:
+          type: number
+          nullable: true
+        _memory:
+          type: number
+          nullable: true
+        _createdAt:
+          type: string
+          format: date-time
+paths:
+  /api/user:
+    get:
+      summary: List users
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+      responses:
+        "200":
+          description: Paginated list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserResponse"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+    post:
+      summary: Create a new user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          description: Invalid data
+  /api/user/{id}:
+    get:
+      summary: Get user by ID
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "404":
+          description: User not found
+    put:
+      summary: Update user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+            example:
+              name: "John Smith"
+              email: "john.smith@example.com"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "404":
+          description: User not found
+    delete:
+      summary: Delete user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: User deleted
+        "404":
+          description: User not found
+  /api/tests:
+    get:
+      summary: List tests
+      tags:
+        - Tests
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: difficulty
+          schema:
+            type: string
+            enum:
+              - EASY
+              - MEDIUM
+              - HARD
+        - in: query
+          name: company
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of tests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TestResponse"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+  /api/tests/{id}:
+    get:
+      summary: Get test by ID
+      tags:
+        - Tests
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Test found
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      description:
+                        type: string
+                      company:
+                        nullable: true
+                        allOf:
+                          - type: object
+                            properties:
+                              id:
+                                type: string
+                              name:
+                                type: string
+                              logo:
+                                type: string
+                                nullable: true
+                      difficulty:
+                        type: string
+                        enum: [EASY, MEDIUM, HARD]
+                      duration:
+                        type: integer
+                      isActive:
+                        type: boolean
+                      totalQuestions:
+                        type: integer
+                      questionsByType:
+                        type: object
+                        properties:
+                          MCQ:
+                            type: integer
+                          PROGRAMMING:
+                            type: integer
+                      questionsByDifficulty:
+                        type: object
+                        properties:
+                          EASY:
+                            type: integer
+                          MEDIUM:
+                            type: integer
+                          HARD:
+                            type: integer
+                      maxScore:
+                        type: number
+                      createdAt:
+                        type: string
+                        format: date-time
+                      updatedAt:
+                        type: string
+                        format: date-time
+              example:
+                success: true
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440000"
+                  name: "Programming test"
+                  description: "Knowledge assessment"
+                  company: null
+                  difficulty: EASY
+                  duration: 30
+                  isActive: true
+                  totalQuestions: 2
+                  questionsByType:
+                    MCQ: 1
+                    PROGRAMMING: 1
+                  questionsByDifficulty:
+                    EASY: 2
+                    MEDIUM: 0
+                    HARD: 0
+                  maxScore: 20
+                  createdAt: "2026-11-25T12:00:00Z"
+                  updatedAt: "2026-11-25T12:00:00Z"
+        "400":
+          description: Invalid test ID
+        "404":
+          description: Test not found
+        "500":
+          description: Internal server error
+  /api/tests/{id}/start:
+    post:
+      summary: Start a test session
+      tags:
+        - Tests
+      security:
+        - userIdHeader: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Test session started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    required:
+                      - sessionId
+                      - testId
+                      - testName
+                      - duration
+                      - startedAt
+                      - expiresAt
+                      - remainingTime
+                      - totalQuestions
+                    properties:
+                      sessionId:
+                        type: string
+                      testId:
+                        type: string
+                      testName:
+                        type: string
+                      duration:
+                        type: integer
+                      startedAt:
+                        type: string
+                        format: date-time
+                      expiresAt:
+                        type: string
+                        format: date-time
+                      remainingTime:
+                        type: integer
+                      totalQuestions:
+                        type: integer
+              example:
+                success: true
+                data:
+                  sessionId: "550e8400-e29b-41d4-a716-446655440001"
+                  testId: "550e8400-e29b-41d4-a716-446655440000"
+                  testName: "Programming test"
+                  duration: 30
+                  startedAt: "2026-11-26T10:00:00Z"
+                  expiresAt: "2026-11-26T10:30:00Z"
+                  remainingTime: 1800
+                  totalQuestions: 10
+        "400":
+          description: Invalid ID or inactive test
+        "404":
+          description: Test not found
+        "500":
+          description: Internal server error
+  /api/tests/{id}/questions:
+    get:
+      summary: Get questions for a test session
+      tags:
+        - Tests
+      security:
+        - userIdHeader: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: sessionId
+          required: true
+          description: Started session identifier
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Questions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      sessionId:
+                        type: string
+                      testId:
+                        type: string
+                      remainingTime:
+                        type: integer
+                      expiresAt:
+                        type: string
+                        format: date-time
+                      totalQuestions:
+                        type: integer
+                      questions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            type:
+                              type: string
+                              enum: [MCQ, PROGRAMMING]
+                            text:
+                              type: string
+                            difficulty:
+                              type: string
+                            points:
+                              type: number
+                            timeLimit:
+                              type: number
+                              nullable: true
+                            order:
+                              type: integer
+                            options:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                  text:
+                                    type: string
+                            programmingData:
+                              type: object
+                              properties:
+                                starterCode:
+                                  type: string
+                                  nullable: true
+                                examples:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      input:
+                                        type: string
+                                      explanation:
+                                        type: string
+                                        nullable: true
+              example:
+                success: true
+                data:
+                  sessionId: "550e8400-e29b-41d4-a716-446655440001"
+                  testId: "550e8400-e29b-41d4-a716-446655440000"
+                  remainingTime: 1200
+                  expiresAt: "2026-11-25T23:30:00Z"
+                  totalQuestions: 1
+                  questions:
+                    - id: "550e8400-e29b-41d4-a716-446655440002"
+                      type: MCQ
+                      text: "What is TypeScript?"
+                      difficulty: EASY
+                      points: 10
+                      timeLimit: null
+                      order: 1
+                      options:
+                        - id: "option-1"
+                          text: "A language built on JavaScript"
+                        - id: "option-2"
+                          text: "A database"
+        "400":
+          description: Invalid identifiers or incorrect session
+        "403":
+          description: Unauthorized or expired session
+        "500":
+          description: Internal server error
+  /api/tests/{id}/submit:
+    post:
+      summary: Submit test answers
+      tags:
+        - Tests
+      security:
+        - userIdHeader: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitTestRequest"
+      responses:
+        "201":
+          description: Test result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmitTestResponse"
+        "400":
+          description: Invalid data or session issues
+        "401":
+          description: Missing user identifier
+        "403":
+          description: Unauthorized or expired session
+        "409":
+          description: A submission already exists for this session
+        "500":
+          description: Internal server error
+  /api/problems:
+    get:
+      summary: List problems
+      tags:
+        - Problems
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+        - in: query
+          name: difficulty
+          schema:
+            type: string
+            enum:
+              - EASY
+              - MEDIUM
+              - HARD
+        - in: query
+          name: tag
+          schema:
+            type: string
+          description: Filter by a single tag
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of problems
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProblemResponse"
+                  meta:
+                    type: object
+                    required: [page, pageSize, total, totalPages]
+                    properties:
+                      page:
+                        type: integer
+                      pageSize:
+                        type: integer
+                      total:
+                        type: integer
+                      totalPages:
+                        type: integer
+    post:
+      summary: Create a new problem
+      tags:
+        - Problems
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProblemRequest"
+      responses:
+        "201":
+          description: Problem created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetailResponse"
+              example:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+                slug: "two-sum"
+                title: "Two Sum"
+                difficulty: EASY
+                tags: ["arrays", "hash-table"]
+                acceptedCount: 0
+                submissionCount: 0
+                acceptanceRate: 0
+                isActive: true
+                description: "Find two numbers that add up to the target"
+                constraints:
+                  - "2 <= nums.length <= 10000"
+                testCases:
+                  - id: "550e8400-e29b-41d4-a716-446655440001"
+                    input: "[2,7,11,15], 9"
+                    explanation: "The first two numbers add up to 9"
+                    order: 1
+                starterCodes:
+                  - id: "550e8400-e29b-41d4-a716-446655440002"
+                    language: javascript
+                    code: "function twoSum(nums, target) {}"
+        "400":
+          description: Invalid data or validation error
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal server error
+  /api/problems/tags:
+    get:
+      summary: Get all tags
+      tags:
+        - Problems
+      responses:
+        "200":
+          description: List of available tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              example:
+                - arrays
+                - hash-table
+                - dynamic-programming
+  /api/problems/stats:
+    get:
+      summary: Problem statistics (authentication required)
+      tags:
+        - Problems
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Problem statistics for the authenticated user
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [total, solved, attempted, unsolved]
+                properties:
+                  total:
+                    type: integer
+                  solved:
+                    type: integer
+                  attempted:
+                    type: integer
+                  unsolved:
+                    type: integer
+              example:
+                total: 100
+                solved: 40
+                attempted: 20
+                unsolved: 40
+        "401":
+          description: Unauthorized
+  /api/problems/{id}:
+    get:
+      summary: Get problem by ID
+      tags:
+        - Problems
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Problem found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetailResponse"
+        "404":
+          description: Problem not found
+    patch:
+      summary: Update problem
+      tags:
+        - Problems
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProblemRequest"
+            example:
+              title: "Two Sum - Updated"
+              difficulty: MEDIUM
+              tags:
+                - arrays
+                - hash-table
+              isActive: true
+      responses:
+        "200":
+          description: Problem updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetailResponse"
+        "400":
+          description: Invalid data
+        "401":
+          description: Unauthorized
+        "404":
+          description: Problem not found
+        "500":
+          description: Internal server error
+    delete:
+      summary: Soft-delete problem
+      tags:
+        - Problems
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Problem deleted
+        "401":
+          description: Unauthorized
+        "404":
+          description: Problem not found
+  /api/problems/slug/{slug}:
+    get:
+      summary: Get problem by slug
+      tags:
+        - Problems
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Problem found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetailResponse"
+        "404":
+          description: Problem not found
+  /api/courses:
+    get:
+      summary: List courses
+      tags:
+        - Courses
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: isActive
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of courses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CourseResponse"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+  /api/courses/{id}:
+    get:
+      summary: Get course by ID
+      tags:
+        - Courses
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Course found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseResponse"
+        "404":
+          description: Course not found
+  /api/courses/{id}/enroll:
+    post:
+      summary: Enroll in a course
+      tags:
+        - Courses
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Enrollment successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnrollRequest"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Course not found
+  /api/courses/me/courses:
+    get:
+      summary: Get my enrolled courses
+      tags:
+        - Courses
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of enrolled courses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnrolledCoursesResponse"
+        "401":
+          description: Unauthorized
+  /api/contests/stats:
+    get:
+      summary: Contest statistics
+      tags:
+        - Contests
+      responses:
+        "200":
+          description: Statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContestStatsResponse"
+  /api/contests/{id}:
+    get:
+      summary: Get contest by ID
+      tags:
+        - Contests
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Contest found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContestResponse"
+        "404":
+          description: Contest not found
+  /api/contests:
+    get:
+      summary: List contests
+      tags:
+        - Contests
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - UPCOMING
+              - ACTIVE
+              - FINISHED
+      responses:
+        "200":
+          description: List of contests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ContestResponse"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationMeta"
+    post:
+      summary: Create a new contest
+      tags:
+        - Contests
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContestRequest"
+      responses:
+        "201":
+          description: Contest created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContestResponse"
+        "400":
+          description: Invalid data
+        "401":
+          description: Unauthorized
+  /api/contests/{id}/register:
+    post:
+      summary: Register for a contest
+      tags:
+        - Contests
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Contest not found
+  /api/auth/signup:
+    post:
+      summary: Sign up a new user
+      description: Creates a new user account.
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupRequest"
+      responses:
+        "201":
+          description: User registered successfully
+        "400":
+          description: Invalid data
+        "409":
+          description: User already exists
+  /api/auth/login:
+    post:
+      summary: Log in
+      description: Authenticates a user and returns an access token and a refresh token.
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+  /api/auth/refresh:
+    post:
+      summary: Refresh access token
+      description: Generates a new access token using a valid refresh token.
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "200":
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid refresh token
+  /api/auth/logout:
+    post:
+      summary: Log out
+      description: Invalidates the user's refresh token.
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+            example:
+              refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        "200":
+          description: Logged out successfully
+          content:
+            application/json:
+              example:
+                message: Logged out successfully
+        "400":
+          description: Refresh token required
+          content:
+            application/json:
+              example:
+                error: Missing required fields
+                message: Refresh token is required
+        "404":
+          description: Refresh token not found
+          content:
+            application/json:
+              example:
+                error: Refresh token not found
+                message: Refresh token not found
+        "500":
+          description: Internal server error
+  /api/auth/me:
+    get:
+      summary: Get authenticated user
+      description: Returns information about the JWT-authenticated user.
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          description: Invalid or expired token
+  /:
+    get:
+      tags: [Health]
+      summary: Get basic API information
+      security: []
+      responses:
+        "200":
+          description: API information and main routes
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, timestamp, endpoints]
+                properties:
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+                  endpoints:
+                    type: object
+                    additionalProperties:
+                      type: string
+              example:
+                message: "API is working correctly! 🚀"
+                timestamp: "2026-11-23T22:35:57.419Z"
+                endpoints:
+                  health: /health
+                  healthLive: /health/live
+                  healthReady: /health/ready
+                  auth: /api/auth
+                  users: /api/user
+                  tests: /api/tests
+                  courses: /api/courses
+  /health/live:
+    get:
+      tags: [Health]
+      summary: Check whether the process is running
+      security: []
+      responses:
+        "200":
+          description: Process is running
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, uptime]
+                properties:
+                  status:
+                    type: string
+                    enum: [OK]
+                  uptime:
+                    type: number
+              example:
+                status: OK
+                uptime: 123.456
+  /health:
+    get:
+      tags: [Health]
+      summary: Temporary compatibility check
+      description: Temporary endpoint for existing health monitors. Prefer /health/live.
+      deprecated: true
+      security: []
+      responses:
+        "200":
+          description: Process is running
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, uptime]
+                properties:
+                  status:
+                    type: string
+                    enum: [OK]
+                  uptime:
+                    type: number
+              example:
+                status: OK
+                uptime: 123.456
+  /health/ready:
+    get:
+      tags: [Health]
+      summary: Check PostgreSQL availability
+      security: []
+      responses:
+        "200":
+          description: PostgreSQL connection available
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, database]
+                properties:
+                  status:
+                    type: string
+                    enum: [ready]
+                  database:
+                    type: string
+                    enum: [connected]
+              example:
+                status: ready
+                database: connected
+        "503":
+          description: PostgreSQL connection unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, database]
+                properties:
+                  status:
+                    type: string
+                    enum: [unavailable]
+                  database:
+                    type: string
+                    enum: [disconnected]
+              example:
+                status: unavailable
+                database: disconnected
+  /api/submissions:
+    post:
+      tags: [Submissions]
+      summary: Create and process a code submission
+      description: The user is identified through the JWT; do not include userId in the request body.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubmissionRequest"
+            example:
+              problemId: "550e8400-e29b-41d4-a716-446655440000"
+              language: javascript
+              code: "console.log('Hello, world!');"
+      responses:
+        "201":
+          description: Submission created and processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmissionResponse"
+              example:
+                _id: "34e37c0e-3946-4fa2-b816-cf7c2704d1f1"
+                _problemId: "550e8400-e29b-41d4-a716-446655440000"
+                _userId: "2c09672c-8eb2-4fbc-990a-377b29a6e351"
+                _language: javascript
+                _code: "console.log('Hello, world!');"
+                _status: pending
+                _runtime: null
+                _memory: null
+                _createdAt: "2026-11-23T12:00:00.000Z"
+        "400":
+          description: Invalid data or missing user identifier
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message:
+                    type: string
+              example:
+                message: Invalid submission payload
+        "401":
+          description: Missing or invalid token (JWT middleware)
+        "500":
+          description: Error creating or processing the submission
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message:
+                    type: string
+              example:
+                message: Internal server error
+  /api/submissions/{id}:
+    get:
+      tags: [Submissions]
+      summary: Get own submission by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: "34e37c0e-3946-4fa2-b816-cf7c2704d1f1"
+      responses:
+        "200":
+          description: Submission found and owned by the authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmissionResponse"
+              example:
+                _id: "34e37c0e-3946-4fa2-b816-cf7c2704d1f1"
+                _problemId: "550e8400-e29b-41d4-a716-446655440000"
+                _userId: "2c09672c-8eb2-4fbc-990a-377b29a6e351"
+                _language: javascript
+                _code: "console.log('Hello, world!');"
+                _status: accepted
+                _runtime: 12
+                _memory: 1024
+                _createdAt: "2026-11-23T12:00:00.000Z"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+              example: { message: Authentication required }
+        "403":
+          description: Submission belongs to another user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+              example: { message: Forbidden }
+        "404":
+          description: Submission not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+              example: { message: Submission not found }
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+              example: { message: Internal server error }
+  /api/users/{id}/submissions:
+    get:
+      tags: [Submissions]
+      summary: List a user's submissions
+      description: Only the authenticated user's submissions can be retrieved. Returns an array without pagination metadata.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: "2c09672c-8eb2-4fbc-990a-377b29a6e351"
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+          example: 20
+      responses:
+        "200":
+          description: Array of user submissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubmissionResponse"
+              example:
+                - _id: "34e37c0e-3946-4fa2-b816-cf7c2704d1f1"
+                  _problemId: "550e8400-e29b-41d4-a716-446655440000"
+                  _userId: "2c09672c-8eb2-4fbc-990a-377b29a6e351"
+                  _language: javascript
+                  _code: "console.log('Hello, world!');"
+                  _status: accepted
+                  _runtime: 12
+                  _memory: 1024
+                  _createdAt: "2026-11-23T12:00:00.000Z"
+        "400":
+          description: Invalid pagination parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+              example: { message: page and limit must be positive integers }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+              example: { message: Authentication required }
+        "403":
+          description: Cannot retrieve another user's submissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+              example: { message: Forbidden }
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+              example: { message: Internal server error }
+tags: []

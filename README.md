@@ -1,259 +1,568 @@
-# Express API with TypeScript
+# api-leetcode
 
-A basic REST API built with Express.js and TypeScript, configured with ESLint, Prettier, and Husky to maintain code quality.
+REST API for a coding practice platform inspired by LeetCode. The application provides authentication, user management, coding problems, courses, contests, tests, and solution submissions.
 
-## 🚀 Features
+## Technologies
 
-- **Express.js** - Fast and minimalist web framework
-- **TypeScript** - Static typing for JavaScript
-- **ESLint** - Static code analysis to identify problems
-- **Prettier** - Automatic code formatter
-- **Husky** - Git hooks to automate tasks before commits
-- **Nodemon** - Automatic reload during development
+- Node.js **>= 22.20.0** and TypeScript
+- Express 4
+- PostgreSQL 13 for the local Docker environment
+- Prisma ORM 6
+- JWT authentication for protected endpoints using `AuthMiddleware.validateToken`
+- Vitest for automated testing
+- Swagger UI and OpenAPI 3.0 for API documentation
+- ESLint, Prettier, and Husky for code quality
 
-## 📦 Installation
+## Requirements
+
+- Node.js **>= 22.20.0** and npm
+- Docker with Docker Compose to run the provided local database, or access to an existing PostgreSQL instance
+
+## Local Installation and Setup
+
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-## 🛠️ Available Scripts
+### 2. Configure environment variables
+
+Create a `.env` file in the repository root.
+
+Example development configuration:
+
+```dotenv
+PORT=3000
+ENV=development
+LOG_LEVEL=info
+
+DATABASE_URL="postgresql://your_username:your_password@localhost:5432/leetcode_db"
+
+JWT_SECRET="replace_with_a_long_random_access_token_secret"
+JWT_REFRESH_TOKEN_SECRET="replace_with_a_different_long_random_refresh_token_secret"
+
+JWT_EXPIRES_IN=30000
+JWT_REFRESH_TOKEN_EXPIRES_IN=604800000
+JWT_SALT_ROUNDS=10
+```
+
+Replace all example credentials and secrets with appropriate values for your environment.
+
+The token expiration values shown above match the current repository defaults. Verify the units expected by the implementation before changing them.
+
+**Security:** Never commit `.env` files, passwords, or real authentication secrets to Git.
+
+### 3. Start the local database
+
+If you are using the PostgreSQL database provided by the repository, review:
+
+```text
+local-database/database.yaml
+```
+
+Configure `POSTGRES_USER` and `POSTGRES_PASSWORD` consistently with your `DATABASE_URL`.
+
+Start the database:
 
 ```bash
-# Development - Starts the server with automatic reload
+npm run db:up
+```
+
+The Docker Compose configuration defines:
+
+- Container: `leetcode-db`
+- Database: `leetcode_db`
+- Local port: `5432`
+
+An existing PostgreSQL instance can be used instead of Docker.
+
+### 4. Generate the Prisma Client and run migrations
+
+```bash
+npx prisma generate
+npm run prisma:migrate
+```
+
+The `prisma:migrate` script executes:
+
+```bash
+npx prisma migrate dev
+```
+
+**Important:** This command is intended for development databases. Do not use `prisma migrate dev` directly in production.
+
+### 5. Start the development server
+
+```bash
 npm run dev
+```
 
-# Build - Compiles TypeScript to JavaScript
+By default, the API runs at:
+
+```text
+http://localhost:3000
+```
+
+The HTTP port can be changed through the `PORT` environment variable.
+
+**Note:** Database connection and migration commands require an accessible PostgreSQL database. Unit tests using mocks or in-memory repositories may run without a database connection, depending on the test.
+
+## Configuration
+
+The application uses the `config` package to manage its settings.
+
+Relevant configuration files:
+
+- `config/default.json`: Default application settings.
+- `config/custom-environment-variables.json`: Mapping between configuration properties and environment variables.
+- `config/test.json`: Test-specific configuration.
+- `prisma.config.ts`: Prisma configuration, including environment loading, schema location, migrations directory, and database connection settings.
+
+### Environment Variables
+
+| Variable | Description |
+| --- | --- |
+| `PORT` | HTTP server port. Default: `3000`. |
+| `ENV` | Application environment used by the configuration package. |
+| `LOG_LEVEL` | Application logging level. |
+| `DATABASE_URL` | PostgreSQL connection string used by Prisma. |
+| `JWT_SECRET` | Secret used to sign access tokens. |
+| `JWT_EXPIRES_IN` | Configured access token expiration. |
+| `JWT_SALT_ROUNDS` | Number of rounds used for password hashing. |
+| `JWT_REFRESH_TOKEN_SECRET` | Secret used to sign refresh tokens. |
+| `JWT_REFRESH_TOKEN_EXPIRES_IN` | Configured refresh token expiration. |
+
+**Important:** `ENV` is mapped to `app.nodeEnv` through `config/custom-environment-variables.json`.
+
+`NODE_ENV` is a separate environment variable that may also affect the behavior of Node.js tools and dependencies. Verify both settings when configuring a specific environment.
+
+## API Documentation
+
+The OpenAPI 3.0 specification is maintained in:
+
+[`openapi.yaml`](./openapi.yaml)
+
+In non-production environments, the interactive Swagger UI is available at:
+
+```text
+http://localhost:3000/docs
+```
+
+The documentation includes available endpoints, request parameters, request bodies, response schemas, status codes, and example payloads.
+
+Swagger UI is not registered when `config.app.nodeEnv` is set to `production`.
+
+### API Endpoint Groups
+
+| Module | Main Routes | Description |
+| --- | --- | --- |
+| Health | `/`, `/health`, `/health/live`, `/health/ready` | Application information, liveness, and readiness checks. |
+| Authentication | `/api/auth` | User registration, login, token refresh, logout, and authenticated profile. |
+| Users | `/api/user` | User management operations. |
+| Problems | `/api/problems` | Coding problem listing, retrieval, and management. |
+| Courses | `/api/courses` | Course retrieval and enrollment. |
+| Contests | `/api/contests` | Contest retrieval, creation, and registration. |
+| Tests | `/api/tests` | Test retrieval, session creation, and submission. |
+| Submissions | `/api/submissions`, `/api/users/{id}/submissions` | Solution submission and retrieval. |
+
+For detailed endpoint contracts, refer to `openapi.yaml`.
+
+### Authentication and Current Security Behavior
+
+Endpoints marked with `bearerAuth` in the OpenAPI specification require an access token:
+
+```http
+Authorization: Bearer <token>
+```
+
+The following authentication endpoints do not require an access JWT:
+
+- `POST /api/auth/signup`
+- `POST /api/auth/login`
+- `POST /api/auth/refresh`
+
+The logout endpoint receives a `refreshToken` in its JSON request body and does not currently use JWT authentication middleware on its route.
+
+#### Important Security Limitation: Test Endpoints
+
+The following endpoints currently rely on middleware that reads the `x-user-id` request header:
+
+- `POST /api/tests/{id}/start`
+- `GET /api/tests/{id}/questions`
+- `POST /api/tests/{id}/submit`
+
+This header-based mechanism **does not cryptographically verify user identity** and must not be considered equivalent to JWT authentication.
+
+**Do not use this header as proof of identity in a public production deployment without first implementing proper authentication and authorization.**
+
+## Available npm Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the development server using Nodemon. |
+| `npm run build` | Compile TypeScript and resolve path aliases with `tsc-alias`. |
+| `npm start` | Run the compiled application from `dist/index.js`. |
+| `npm run lint` | Run ESLint on `src/**/*.ts`. |
+| `npm run lint:fix` | Run ESLint with automatic fixes. |
+| `npm run format` | Format TypeScript files using Prettier. |
+| `npm test` | Run automated tests once using Vitest. |
+| `npm run test:watch` | Run Vitest in watch mode. |
+| `npm run test:coverage` | Run tests with coverage reporting. |
+| `npm run db:up` | Start the local PostgreSQL database using Docker Compose. |
+| `npm run prisma:migrate` | Run Prisma development migrations. |
+
+### Build and Run
+
+To build the application:
+
+```bash
 npm run build
+```
 
-# Production - Runs the compiled version
+To start the compiled application:
+
+```bash
 npm start
+```
 
-# Linting - Analyzes code for problems
+## Code Quality and Testing
+
+Run the following checks before submitting changes:
+
+```bash
 npm run lint
-
-# Linting with automatic fixes
-npm run lint:fix
-
-# Format - Applies consistent code formatting
-npm run format
+npm test
+npm run build
 ```
 
-## 🚀 Usage
+Automated tests are implemented with Vitest. Some tests use mocks or in-memory repositories, while integration tests may require additional services.
 
-### Development
+### Line Ending Considerations
+
+On Windows, ESLint and Prettier may report errors such as:
+
+```text
+Delete ␍
+```
+
+These errors indicate a mismatch between CRLF and LF line endings.
+
+Before applying automatic fixes, review the repository's formatting conventions and avoid introducing unrelated changes across existing source files.
+
+For a temporary, non-modifying lint check that accepts the current file line endings, run:
 
 ```bash
-npm run dev
+npx eslint "src/**/*.ts" --rule 'prettier/prettier: ["error", {"endOfLine": "auto"}]'
 ```
 
-The server will run at `http://localhost:3001`
+This command does not modify the repository configuration.
 
-### Production
+**Note:** This temporary check does not replace fixing the underlying line-ending inconsistency. The standard `npm run lint` command should pass before the project considers its default lint configuration fully validated.
+
+### OpenAPI Validation
+
+Validate the OpenAPI specification locally:
+
+```bash
+npx --yes @apidevtools/swagger-cli validate openapi.yaml
+```
+
+This command checks the structure and references of `openapi.yaml`.
+
+It does not guarantee that every endpoint contract matches the runtime implementation.
+
+The command is not currently defined as an npm script in `package.json`.
+
+### GitHub Actions Validation
+
+The repository includes an OpenAPI validation workflow:
+
+```text
+.github/workflows/openapi.yml
+```
+
+The workflow runs when a Pull Request targets `next` or `master` and modifies either:
+
+- `openapi.yaml`
+- `.github/workflows/openapi.yml`
+
+It can also be triggered manually through GitHub Actions.
+
+The workflow uses Node.js 22 and validates the OpenAPI specification with `swagger-cli`.
+
+## Repository Structure
+
+```text
+api-leetcode/
+├── .github/
+│   └── workflows/             # GitHub Actions workflows
+├── config/                    # Application and environment configuration
+├── local-database/            # Local PostgreSQL Docker configuration
+├── prisma/                    # Prisma schema and database migrations
+├── src/
+│   ├── auth/                  # Authentication module
+│   ├── user/                  # User management module
+│   ├── problems/              # Coding problems module
+│   ├── course/                # Courses module
+│   ├── contests/              # Contests module
+│   ├── tests/                 # Tests module
+│   ├── submissions/           # Solution submissions module
+│   ├── share/                 # Shared infrastructure and utilities
+│   ├── config/                # Swagger and application configuration
+│   └── index.ts               # Application entry point and route registration
+├── test/                      # Automated tests
+├── openapi.yaml               # OpenAPI 3.0 specification
+├── prisma.config.ts           # Prisma configuration
+├── package.json               # Dependencies and npm scripts
+└── README.md                  # Project documentation
+```
+
+## How to Create a New Module
+
+The project organizes its features into modules under `src/`, separating business logic from application and infrastructure concerns.
+
+To implement a new module, follow the existing repository conventions.
+
+### 1. Create the module directory
+
+Create a directory under `src/` using the module name.
+
+For example:
+
+```text
+src/new-module/
+```
+
+### 2. Organize the module layers
+
+Use the following structure when appropriate:
+
+```text
+src/new-module/
+├── domain/
+├── application/
+└── infrastructure/
+```
+
+Responsibilities:
+
+- **`domain/`**: Domain entities, business rules, and repository interfaces.
+- **`application/`**: Use cases, application services, and Data Transfer Objects (DTOs).
+- **`infrastructure/`**: HTTP controllers, routes, database repositories, and external service adapters.
+
+Adapt the structure to the actual requirements of the module while following existing project conventions.
+
+### 3. Implement the business logic
+
+Define the required domain models and application use cases.
+
+Keep business logic independent from Express controllers and Prisma-specific persistence details whenever possible.
+
+Use repository interfaces or other abstractions to separate application logic from infrastructure implementations.
+
+### 4. Implement HTTP routes
+
+Create the required controllers and routes under the infrastructure layer.
+
+Register the module router in:
+
+```text
+src/index.ts
+```
+
+Apply the appropriate authentication, authorization, and validation mechanisms to each endpoint.
+
+### 5. Update the OpenAPI specification
+
+Document every new or modified endpoint in:
+
+```text
+openapi.yaml
+```
+
+Include, as applicable:
+
+- HTTP method and path
+- Operation summary and description
+- Path and query parameters
+- Authentication requirements
+- Request body schemas
+- Successful responses
+- Error responses
+- Request and response examples
+
+Validate the specification after making changes.
+
+### 6. Add automated tests
+
+Create tests under:
+
+```text
+test/
+```
+
+Follow the testing conventions already used by the repository.
+
+Tests should cover the relevant business rules, expected results, and error conditions.
+
+### 7. Run project checks
+
+```bash
+npm run lint
+npm test
+npm run build
+```
+
+Also validate the API specification:
+
+```bash
+npx --yes @apidevtools/swagger-cli validate openapi.yaml
+```
+
+If the standard lint command fails because of existing CRLF line-ending inconsistencies, investigate the issue without automatically reformatting unrelated files.
+
+Refer to the existing modules, especially `src/problems/`, for practical examples of the project's architecture and conventions.
+
+## Contribution and Release Workflow
+
+The repository uses the following shared branches:
+
+- **`next`**: Integration branch for approved changes.
+- **`master`**: Stable release branch.
+
+### Contributing
+
+1. Create or use a feature branch following the `feature/...` naming convention.
+2. Implement the changes associated with the assigned issue.
+3. Add or update tests and documentation when necessary.
+4. Run the applicable lint, test, build, and OpenAPI validation checks.
+5. Update the feature branch against `origin/next` using the rebase procedure agreed upon by the team.
+6. Open a Pull Request targeting `next`, following the team's review process.
+
+**Do not push feature changes directly to `next` or `master`.**
+
+### Versioning and Releases
+
+The repository documents a release workflow based on Conventional Commits and GitHub Actions automation.
+
+Review the workflows under `.github/workflows/` for the current release behavior.
+
+The current `package.json` does not define `release` or `release:rc` scripts.
+
+## Deployment
+
+The API can be deployed to a hosting environment that supports Node.js and provides access to a PostgreSQL database.
+
+The following instructions describe a general production deployment process. Platform-specific configuration depends on the hosting provider.
+
+### 1. Requirements
+
+- Node.js 22.20.0 or later.
+- npm.
+- A PostgreSQL database accessible from the application.
+- Secure environment variables for database access and JWT authentication.
+
+### 2. Configure Environment Variables
+
+Configure the following variables in the hosting provider's environment settings:
+
+| Variable | Description |
+| --- | --- |
+| `PORT` | HTTP port used by the application. |
+| `ENV` | Set to `production` for the application configuration. |
+| `NODE_ENV` | Set to `production` for the Node.js runtime. |
+| `DATABASE_URL` | PostgreSQL connection string. |
+| `JWT_SECRET` | Secret for signing access tokens. |
+| `JWT_REFRESH_TOKEN_SECRET` | Secret for signing refresh tokens. |
+| `JWT_EXPIRES_IN` | Access token expiration configuration. |
+| `JWT_REFRESH_TOKEN_EXPIRES_IN` | Refresh token expiration configuration. |
+| `JWT_SALT_ROUNDS` | Password hashing configuration. |
+
+Never commit production credentials or secrets to the repository.
+
+### 3. Install Dependencies and Build
+
+From the repository root, install the dependencies required for building the application:
+
+```bash
+npm ci
+```
+
+Generate the Prisma Client:
+
+```bash
+npx prisma generate
+```
+
+Build the TypeScript application:
 
 ```bash
 npm run build
+```
+
+The compiled application is generated in the `dist/` directory.
+
+### 4. Apply Database Migrations
+
+Before starting the application, apply existing Prisma migrations to the target database:
+
+```bash
+npx prisma migrate deploy
+```
+
+This command applies pending migrations without creating new development migrations.
+
+Ensure that the database is accessible and that its credentials are configured correctly.
+
+Use a database backup and review pending migrations before updating an existing production database.
+
+### 5. Start the Application
+
+Start the compiled application:
+
+```bash
 npm start
 ```
 
-## 📁 Project Structure
-
-```
-hex/
-├── src/
-│   └── index.ts          # Main entry point
-├── dist/                 # Compiled files (generated)
-├── .husky/              # Git hooks
-├── .gitignore           # Files ignored by Git
-├── .npmrc               # Local npm configuration
-├── .prettierrc          # Prettier configuration
-├── .eslintrc.js         # ESLint configuration
-├── nodemon.json         # Nodemon configuration
-├── package.json         # Dependencies and scripts
-├── tsconfig.json        # TypeScript configuration
-└── README.md            # This file
-```
-
-## 🔧 Available Endpoints
-
-### GET /
-
-Basic test endpoint
-
-```json
-{
-  "message": "API is working correctly! 🚀",
-  "timestamp": "2024-01-01T00:00:00.000Z"
-}
-```
-
-
-### GET /health/live
-
-Checks whether the API process is running.
-
-Returns HTTP 200:
-
-```json
-{
-  "status": "OK",
-  "uptime": 123.456
-}
-```
-
-### GET /health/ready
-
-Checks PostgreSQL availability using Prisma and SELECT 1.
-
-Returns HTTP 200 when the database is available:
-
-```json
-{
-  "status": "ready",
-  "database": "connected"
-}
-```
-
-Returns HTTP 503 when the database is unavailable:
-
-```json
-{
-  "status": "unavailable",
-  "database": "disconnected"
-}
-```
-
-
-## 🛡️ Git Hooks
-
-This project uses Husky to automatically run:
-
-- **pre-commit**: Runs lint-staged which applies ESLint and Prettier to modified files
-
-## 📝 Configuration
-
-### ESLint
-
-- Configured for TypeScript
-- Strict rules enabled
-- Prettier integration
-
-### Prettier
-
-- Semicolons required
-- Single quotes
-- Line width: 80 characters
-- Tabs: 2 spaces
-
-### TypeScript
-
-- Target: ES2020
-- Strict mode enabled
-- Source maps enabled
-- Type declarations generated
-
-## 🧪 How to test
-
-Tests use [Vitest](https://vitest.dev/) (and Supertest for route tests, once the app wiring from API-021 is ready).
-
-### Requirements
-
-- Node.js `>=22.20.0`
-- `npm install` (no database or Docker is needed for the current tests)
-
-### Scripts
+The command executes:
 
 ```bash
-# Run all tests once (used by CI)
-npm test
-
-# Watch mode while developing
-npm run test:watch
-
-# Run tests and print a coverage report for src/auth
-npm run test:coverage
+node dist/index.js
 ```
 
-### Where the tests live
+Configure the hosting provider to run this command when starting the service.
 
+The hosting environment must provide the configured HTTP port and database connectivity.
+
+### 6. Deployment Verification
+
+After deployment, verify the application's health endpoints:
+
+```text
+GET /health
+GET /health/live
+GET /health/ready
 ```
-test/
-├── tsconfig.json                 # Type-checking for tests (resolves @config)
-└── auth/
-    ├── domain/                   # Value objects: email, password
-    ├── application/              # Use cases: signup, login
-    └── helpers/                  # In-memory fakes (e.g. refresh token repository)
-```
 
-- Test files end with `.test.ts` and live in the root `test/` folder.
-- `vitest.config.mts` sets `NODE_ENV=test`, so `config/test.json` is loaded.
-- Use cases are tested with in-memory repositories, so no real database is used.
-- Route tests (login, `me`, refresh, logout) will be added after API-021.
+Confirm that the API responds correctly and that database-dependent functionality works as expected.
 
-## 🤝 Contributing
+Swagger UI is not exposed at `/docs` when the application configuration uses the `production` environment.
 
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+### Security Considerations
 
-## 📄 License
+- Use HTTPS for public API traffic.
+- Store secrets in the hosting provider's secure environment configuration.
+- Restrict PostgreSQL access to trusted services.
+- Keep dependencies updated and review reported security vulnerabilities.
+- Review authentication and authorization before exposing the API publicly.
 
-This project is under the ISC License.
+**Important:** The current test-session endpoints use an `x-user-id` header that does not cryptographically authenticate users. These endpoints must be protected with proper authentication and authorization before public production use.
 
-## How it works the configuration
+### Deployment Status
 
-api-leetcode
-| config
-  | default.json  # Default Base configuration
-  | custom-environment-variables.json
-  | test.json # Test environment
+These instructions describe the deployment procedure supported by the repository scripts and Prisma configuration. A complete production deployment has not been verified as part of API-039.
 
-The configuration files are managed using the `config` package. Each file corresponds to a specific environment:
-## how decide the environment
-the library config automatically detects the environment based on the `NODE_ENV` environment variable. If `NODE_ENV` is not set, it defaults to `default.json`.
+## License
 
-🏷️ Versioning and Releases
-
-This project uses release-it together with
-Conventional Commits (angular preset) to automate versioning, changelog generation, and
-Git tags.
-
-Branch flow
-
-
-next — integration branch where approved PRs are merged. Every push triggers
-.github/workflows/release-next.yml, which automatically generates a release candidate
-(x.y.z-rc.N) with its corresponding tag.
-master — release branch. Merging next → master triggers
-.github/workflows/release-master.yml, which generates the stable version (x.y.z),
-its tag, and updates CHANGELOG.md.
-
-
-PR → merge to next → automatic RC (0.1.0-rc.1, rc.2, ...)
-                 ↓
-        merge next → master → stable version (0.1.0) + CHANGELOG.md
-
-How the version bump is calculated
-
-The bump (major/minor/patch) is determined automatically from commit messages:
-
-Commit prefixBumpfix:patchfeat:minorfeat!: / BREAKING CHANGEmajorchore:, docs:, refactor:, etc.no direct bump, but listed in the changelog
-
-Avoiding duplicate tags/versions
-
-Both workflows run git fetch --tags before executing release-it, and skip themselves
-whenever the triggering commit is already a chore: release ... commit (this prevents an
-infinite loop between the release commit and the pipeline itself).
-
-Local commands
-
-bashnpm run release:rc   # manually generate an RC (normally done by the pipeline on next)
-npm run release      # manually generate a stable version (normally done by the pipeline on master)
-
-Commit convention
-
-feat(auth): add Google login
-fix(api): fix timeout on submissions endpoint
-chore: release v0.1.0   # generated automatically by release-it, do not write by hand
+ISC, as declared in `package.json`.

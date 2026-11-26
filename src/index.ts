@@ -103,7 +103,7 @@ const server = app.listen(config.app.port, () => {
   logger.info(`Server is running on port ${config.app.port}`);
 
   if (config.app.nodeEnv !== 'production') {
-    logger.info(`Swagger is running on port ${config.app.port}/api-docs`);
+    logger.info(`Swagger is running on port ${config.app.port}/docs`);
   }
 
   logger.info(`Environment: ${config.app.nodeEnv}`);
