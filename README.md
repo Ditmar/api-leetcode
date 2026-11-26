@@ -450,6 +450,119 @@ Review the workflows under `.github/workflows/` for the current release behavior
 
 The current `package.json` does not define `release` or `release:rc` scripts.
 
+## Deployment
+
+The API can be deployed to a hosting environment that supports Node.js and provides access to a PostgreSQL database.
+
+The following instructions describe a general production deployment process. Platform-specific configuration depends on the hosting provider.
+
+### 1. Requirements
+
+- Node.js 22.20.0 or later.
+- npm.
+- A PostgreSQL database accessible from the application.
+- Secure environment variables for database access and JWT authentication.
+
+### 2. Configure Environment Variables
+
+Configure the following variables in the hosting provider's environment settings:
+
+| Variable | Description |
+| --- | --- |
+| `PORT` | HTTP port used by the application. |
+| `ENV` | Set to `production` for the application configuration. |
+| `NODE_ENV` | Set to `production` for the Node.js runtime. |
+| `DATABASE_URL` | PostgreSQL connection string. |
+| `JWT_SECRET` | Secret for signing access tokens. |
+| `JWT_REFRESH_TOKEN_SECRET` | Secret for signing refresh tokens. |
+| `JWT_EXPIRES_IN` | Access token expiration configuration. |
+| `JWT_REFRESH_TOKEN_EXPIRES_IN` | Refresh token expiration configuration. |
+| `JWT_SALT_ROUNDS` | Password hashing configuration. |
+
+Never commit production credentials or secrets to the repository.
+
+### 3. Install Dependencies and Build
+
+From the repository root, install the dependencies required for building the application:
+
+```bash
+npm ci
+```
+
+Generate the Prisma Client:
+
+```bash
+npx prisma generate
+```
+
+Build the TypeScript application:
+
+```bash
+npm run build
+```
+
+The compiled application is generated in the `dist/` directory.
+
+### 4. Apply Database Migrations
+
+Before starting the application, apply existing Prisma migrations to the target database:
+
+```bash
+npx prisma migrate deploy
+```
+
+This command applies pending migrations without creating new development migrations.
+
+Ensure that the database is accessible and that its credentials are configured correctly.
+
+Use a database backup and review pending migrations before updating an existing production database.
+
+### 5. Start the Application
+
+Start the compiled application:
+
+```bash
+npm start
+```
+
+The command executes:
+
+```bash
+node dist/index.js
+```
+
+Configure the hosting provider to run this command when starting the service.
+
+The hosting environment must provide the configured HTTP port and database connectivity.
+
+### 6. Deployment Verification
+
+After deployment, verify the application's health endpoints:
+
+```text
+GET /health
+GET /health/live
+GET /health/ready
+```
+
+Confirm that the API responds correctly and that database-dependent functionality works as expected.
+
+Swagger UI is not exposed at `/docs` when the application configuration uses the `production` environment.
+
+### Security Considerations
+
+- Use HTTPS for public API traffic.
+- Store secrets in the hosting provider's secure environment configuration.
+- Restrict PostgreSQL access to trusted services.
+- Keep dependencies updated and review reported security vulnerabilities.
+- Review authentication and authorization before exposing the API publicly.
+
+**Important:** The current test-session endpoints use an `x-user-id` header that does not cryptographically authenticate users. These endpoints must be protected with proper authentication and authorization before public production use.
+
+### Deployment Status
+
+These instructions describe the deployment procedure supported by the repository scripts and Prisma configuration. A complete production deployment has not been verified as part of API-039.
+
 ## License
 
 ISC, as declared in `package.json`.
